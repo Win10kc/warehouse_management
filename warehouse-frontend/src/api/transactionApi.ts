@@ -102,6 +102,9 @@ export const transactionApi = {
   suggestBin: (txId: string, itemId: string, binId: string) =>
     api.put(`/transactions/${txId}/suggest-bin`, { item_id: itemId, bin_id: binId })
        .then((r) => r.data),
+  applyBin: (txId: string, itemId: string) =>
+    api.put(`/transactions/${txId}/apply-bin`, { item_id: itemId })
+       .then((r) => r.data),
 }
 
 export const stockApi = {

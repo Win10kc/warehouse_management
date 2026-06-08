@@ -25,6 +25,8 @@ type SKUReportRow struct {
 	NetChange     int    `json:"net_change"`
 }
 
+
+
 type TransactionRepository interface {
 	List(filter TransactionFilter) ([]domain.Transaction, int64, error)
 	FindByID(id string) (*domain.Transaction, error)
@@ -36,6 +38,7 @@ type TransactionRepository interface {
 	GetDB() *gorm.DB
 	GetSKUReport(fromDate, toDate string) ([]SKUReportRow, error)
 	UpdateItemSuggestedBin(itemID uuid.UUID, suggestedBinID uuid.UUID) error
+	ApplyBin(itemID uuid.UUID, binID uuid.UUID) error
 }
 
 type transactionRepository struct{ db *gorm.DB }
@@ -50,8 +53,8 @@ func (r *transactionRepository) List(f TransactionFilter) ([]domain.Transaction,
 	query := r.db.Model(&domain.Transaction{}).
 		Preload("Items").
 		Preload("Items.Product").
-		Preload("Items.FromBin").   // ← thêm
-		Preload("Items.ToBin").     // ← thêm
+		Preload("Items.FromBin").
+		Preload("Items.ToBin").
 		Preload("CreatedBy").
 		Preload("ApprovedBy")
 
@@ -68,8 +71,12 @@ func (r *transactionRepository) List(f TransactionFilter) ([]domain.Transaction,
 	var total int64
 	query.Count(&total)
 
-	if f.Page < 1 { f.Page = 1 }
-	if f.Limit < 1 || f.Limit > 100 { f.Limit = 20 }
+	if f.Page < 1 {
+		f.Page = 1
+	}
+	if f.Limit < 1 || f.Limit > 100 {
+		f.Limit = 20
+	}
 
 	var list []domain.Transaction
 	err := query.
@@ -81,19 +88,28 @@ func (r *transactionRepository) List(f TransactionFilter) ([]domain.Transaction,
 		return nil, 0, err
 	}
 
-	// ── Enrich bin location (giống FindByID) ──────────────────
+	// Enrich bin location (FromBin, ToBin, SuggestedBin)
 	binIDSet := map[string]bool{}
 	for _, t := range list {
 		for _, item := range t.Items {
-			if item.FromBinID != nil { binIDSet[item.FromBinID.String()] = true }
-			if item.ToBinID   != nil { binIDSet[item.ToBinID.String()]   = true }
+			if item.FromBinID != nil {
+				binIDSet[item.FromBinID.String()] = true
+			}
+			if item.ToBinID != nil {
+				binIDSet[item.ToBinID.String()] = true
+			}
+			if item.SuggestedBinID != nil {
+				binIDSet[item.SuggestedBinID.String()] = true
+			}
 		}
 	}
 
+	locMap := map[string]binLocationRow{}
 	if len(binIDSet) > 0 {
 		binIDs := make([]string, 0, len(binIDSet))
-		for id := range binIDSet { binIDs = append(binIDs, id) }
-
+		for id := range binIDSet {
+			binIDs = append(binIDs, id)
+		}
 		var locs []binLocationRow
 		r.db.Raw(`
 			SELECT b.id AS bin_id, b.code AS bin_code,
@@ -106,26 +122,40 @@ func (r *transactionRepository) List(f TransactionFilter) ([]domain.Transaction,
 			JOIN warehouses w  ON w.id  = z.warehouse_id
 			WHERE b.id IN ?
 		`, binIDs).Scan(&locs)
+		for _, loc := range locs {
+			locMap[loc.BinID] = loc
+		}
+	}
 
-		locMap := map[string]binLocationRow{}
-		for _, loc := range locs { locMap[loc.BinID] = loc }
-
-		for i := range list {
-			for j := range list[i].Items {
-				if list[i].Items[j].FromBin != nil {
-					if loc, ok := locMap[list[i].Items[j].FromBin.ID.String()]; ok {
-						list[i].Items[j].FromBin.RackCode     = loc.RackCode
-						list[i].Items[j].FromBin.ZoneCode     = loc.ZoneCode
-						list[i].Items[j].FromBin.ZoneName     = loc.ZoneName
-						list[i].Items[j].FromBin.WarehouseName = loc.WarehouseName
-					}
+	for i := range list {
+		for j := range list[i].Items {
+			if list[i].Items[j].FromBin != nil {
+				if loc, ok := locMap[list[i].Items[j].FromBin.ID.String()]; ok {
+					list[i].Items[j].FromBin.RackCode      = loc.RackCode
+					list[i].Items[j].FromBin.ZoneCode      = loc.ZoneCode
+					list[i].Items[j].FromBin.ZoneName      = loc.ZoneName
+					list[i].Items[j].FromBin.WarehouseName = loc.WarehouseName
 				}
-				if list[i].Items[j].ToBin != nil {
-					if loc, ok := locMap[list[i].Items[j].ToBin.ID.String()]; ok {
-						list[i].Items[j].ToBin.RackCode     = loc.RackCode
-						list[i].Items[j].ToBin.ZoneCode     = loc.ZoneCode
-						list[i].Items[j].ToBin.ZoneName     = loc.ZoneName
-						list[i].Items[j].ToBin.WarehouseName = loc.WarehouseName
+			}
+			if list[i].Items[j].ToBin != nil {
+				if loc, ok := locMap[list[i].Items[j].ToBin.ID.String()]; ok {
+					list[i].Items[j].ToBin.RackCode      = loc.RackCode
+					list[i].Items[j].ToBin.ZoneCode      = loc.ZoneCode
+					list[i].Items[j].ToBin.ZoneName      = loc.ZoneName
+					list[i].Items[j].ToBin.WarehouseName = loc.WarehouseName
+				}
+			}
+			// Enrich SuggestedBin
+			if list[i].Items[j].SuggestedBinID != nil {
+				if loc, ok := locMap[list[i].Items[j].SuggestedBinID.String()]; ok {
+					sugBinID := *list[i].Items[j].SuggestedBinID
+					list[i].Items[j].SuggestedBin = &domain.Bin{
+						ID:            sugBinID,
+						Code:          loc.BinCode,
+						RackCode:      loc.RackCode,
+						ZoneCode:      loc.ZoneCode,
+						ZoneName:      loc.ZoneName,
+						WarehouseName: loc.WarehouseName,
 					}
 				}
 			}
@@ -145,9 +175,8 @@ type binLocationRow struct {
 	WarehouseName string `gorm:"column:warehouse_name"`
 }
 
-// FindByID load đầy đủ thông tin phiếu kèm tên kho/zone/rack/bin cho từng item.
-// Dùng raw query riêng để enrich bin location vì GORM không Preload nested
-// association qua nhiều bảng (Bin → Rack → Zone → Warehouse) một cách tự động.
+// FindByID load đầy đủ thông tin phiếu kèm bin location cho từng item,
+// bao gồm SuggestedBin.
 func (r *transactionRepository) FindByID(id string) (*domain.Transaction, error) {
 	var t domain.Transaction
 	err := r.db.
@@ -163,7 +192,7 @@ func (r *transactionRepository) FindByID(id string) (*domain.Transaction, error)
 		return nil, err
 	}
 
-	// Thu thập các bin_id cần enrich (from_bin + to_bin, bỏ nil)
+	// Thu thập bin_id cần enrich (from + to + suggested)
 	binIDSet := map[string]bool{}
 	for _, item := range t.Items {
 		if item.FromBinID != nil {
@@ -171,6 +200,9 @@ func (r *transactionRepository) FindByID(id string) (*domain.Transaction, error)
 		}
 		if item.ToBinID != nil {
 			binIDSet[item.ToBinID.String()] = true
+		}
+		if item.SuggestedBinID != nil {
+			binIDSet[item.SuggestedBinID.String()] = true
 		}
 	}
 
@@ -183,7 +215,6 @@ func (r *transactionRepository) FindByID(id string) (*domain.Transaction, error)
 		binIDs = append(binIDs, id)
 	}
 
-	// Query một lần để lấy tên đầy đủ của tất cả các bin liên quan
 	var locs []binLocationRow
 	r.db.Raw(`
 		SELECT
@@ -200,30 +231,41 @@ func (r *transactionRepository) FindByID(id string) (*domain.Transaction, error)
 		WHERE b.id IN ?
 	`, binIDs).Scan(&locs)
 
-	// Build map bin_id → location info
 	locMap := map[string]binLocationRow{}
 	for _, loc := range locs {
 		locMap[loc.BinID] = loc
 	}
 
-	// Enrich từng item
 	for i := range t.Items {
 		if t.Items[i].FromBin != nil {
-			loc, ok := locMap[t.Items[i].FromBin.ID.String()]
-			if ok {
+			if loc, ok := locMap[t.Items[i].FromBin.ID.String()]; ok {
 				t.Items[i].FromBin.RackCode      = loc.RackCode
-				t.Items[i].FromBin.ZoneCode       = loc.ZoneCode
-				t.Items[i].FromBin.ZoneName       = loc.ZoneName
-				t.Items[i].FromBin.WarehouseName  = loc.WarehouseName
+				t.Items[i].FromBin.ZoneCode      = loc.ZoneCode
+				t.Items[i].FromBin.ZoneName      = loc.ZoneName
+				t.Items[i].FromBin.WarehouseName = loc.WarehouseName
 			}
 		}
 		if t.Items[i].ToBin != nil {
-			loc, ok := locMap[t.Items[i].ToBin.ID.String()]
-			if ok {
+			if loc, ok := locMap[t.Items[i].ToBin.ID.String()]; ok {
 				t.Items[i].ToBin.RackCode      = loc.RackCode
-				t.Items[i].ToBin.ZoneCode       = loc.ZoneCode
-				t.Items[i].ToBin.ZoneName       = loc.ZoneName
-				t.Items[i].ToBin.WarehouseName  = loc.WarehouseName
+				t.Items[i].ToBin.ZoneCode      = loc.ZoneCode
+				t.Items[i].ToBin.ZoneName      = loc.ZoneName
+				t.Items[i].ToBin.WarehouseName = loc.WarehouseName
+			}
+		}
+		// ── Enrich SuggestedBin ──────────────────────────────
+		if t.Items[i].SuggestedBinID != nil {
+			sugID := t.Items[i].SuggestedBinID.String()
+			if loc, ok := locMap[sugID]; ok {
+				binUUID := *t.Items[i].SuggestedBinID
+				t.Items[i].SuggestedBin = &domain.Bin{
+					ID:            binUUID,
+					Code:          loc.BinCode,
+					RackCode:      loc.RackCode,
+					ZoneCode:      loc.ZoneCode,
+					ZoneName:      loc.ZoneName,
+					WarehouseName: loc.WarehouseName,
+				}
 			}
 		}
 	}
@@ -248,7 +290,7 @@ func (r *transactionRepository) UpdateFields(tx *gorm.DB, id string, fields map[
 }
 
 func (r *transactionRepository) AddItems(tx *gorm.DB, items []domain.TransactionItem) error {
-	return tx.Omit("Product", "FromBin", "ToBin").Create(&items).Error
+	return tx.Omit("Product", "FromBin", "ToBin", "SuggestedBin").Create(&items).Error
 }
 
 func (r *transactionRepository) UpdateItemActual(tx *gorm.DB, transactionID, productID string, qty int) error {
@@ -284,7 +326,16 @@ func (r *transactionRepository) GetSKUReport(fromDate, toDate string) ([]SKURepo
 }
 
 func (r *transactionRepository) UpdateItemSuggestedBin(itemID uuid.UUID, binID uuid.UUID) error {
+	return r.db.Model(&domain.TransactionItem{}).
+		Where("id = ?", itemID).
+		Update("suggested_bin_id", binID).Error
+}
+
+func (r *transactionRepository) ApplyBin(itemID uuid.UUID, binID uuid.UUID) error {
     return r.db.Model(&domain.TransactionItem{}).
         Where("id = ?", itemID).
-        Update("suggested_bin_id", binID).Error
+        Updates(map[string]any{
+            "from_bin_id":      binID,
+            "suggested_bin_id": nil,
+        }).Error
 }

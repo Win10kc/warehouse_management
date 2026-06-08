@@ -384,6 +384,7 @@ export default function TransactionDetailPage() {
   const [showComplete,    setShowComplete]    = useState(false)
   const [suggestingItem,  setSuggestingItem]  = useState<TransactionItem | null>(null)
   const [actionLoading,   setActionLoading]   = useState(false)
+  const [applyingItemId, setApplyingItemId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -428,11 +429,26 @@ export default function TransactionDetailPage() {
       setActionLoading(false)
     }
   }
+  const handleApplyBin = async (item: TransactionItem) => {
+    if (!tx) return
+    setApplyingItemId(item.id)
+    try {
+      await transactionApi.applyBin(tx.id, item.id)
+      await load()
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
+      alert(msg ?? 'Không thể áp dụng bin')
+    } finally {
+      setApplyingItemId(null)
+    }
+  }
 
   const isManagerOrAdmin = role === 'admin' || role === 'manager'
   const canApproveReject = isManagerOrAdmin && tx?.status === 'pending'
   const canComplete      = isManagerOrAdmin && tx?.status === 'processing'
-  const canSuggestBin    = isManagerOrAdmin && tx?.status === 'processing'
+  const canSuggestBin =
+  isManagerOrAdmin &&
+  tx?.status === 'pending'
 
   // ─── Loading / Error ─────────────────────────────────────
 
@@ -522,7 +538,7 @@ export default function TransactionDetailPage() {
               <h2 style={{ ...s.cardTitle, margin: 0 }}>Sản phẩm ({tx.items.length})</h2>
               {canSuggestBin && (
                 <span style={{ fontSize: '0.72rem', color: '#6b7280', fontStyle: 'italic' }}>
-                  Bấm "Đổi bin" để đề xuất vị trí mới cho nhân viên
+                  Nếu bin đề xuất không đủ hàng, bấm "Đổi bin" để chọn vị trí khác
                 </span>
               )}
             </div>
@@ -540,11 +556,11 @@ export default function TransactionDetailPage() {
                           <p style={s.itemName}>{item.product?.name ?? '—'}</p>
                           <p style={s.itemSku}>SKU: {item.product?.sku ?? '—'}</p>
                         </div>
-                        {/* Nút đề xuất bin — chỉ manager/admin, chỉ khi processing */}
-                        {canSuggestBin && (
+                        {/* Nút đổi bin — manager/admin, pending hoặc processing, hiện chỉ khi có suggested_bin*/}
+                        {canSuggestBin && item.suggested_bin && (
                           <button
                             style={s.btnSuggestBin}
-                            onClick={() => setSuggestingItem(item)}
+                              onClick={() => setSuggestingItem(item)}
                           >
                             📦 Đổi bin
                           </button>
@@ -569,24 +585,39 @@ export default function TransactionDetailPage() {
 
                       {/* Suggested bin — hiện nổi bật nếu có */}
                       {item.suggested_bin && (
-                        <div style={s.suggestedBinBadge}>
-                          <span style={{ fontSize: '0.75rem' }}>📍</span>
-                          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1e40af' }}>
-                            Bin đề xuất:
-                          </span>
-                          <span style={{ fontSize: '0.78rem', color: '#1e3a5f', fontFamily: 'monospace', fontWeight: 700 }}>
-                            {formatBinLocation(item.suggested_bin as unknown as BinInfo)}
-                          </span>
-                          {canSuggestBin && (
-                            <button
-                              style={s.btnChangeSuggestion}
-                              onClick={() => setSuggestingItem(item)}
-                            >
-                              Đổi
-                            </button>
-                          )}
-                        </div>
-                      )}
+  <div style={s.suggestedBinBadge}>
+    <span style={{ fontSize: '0.75rem' }}>📍</span>
+    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1e40af' }}>
+      Bin đề xuất:
+    </span>
+    <span style={{ fontSize: '0.78rem', color: '#1e3a5f', fontFamily: 'monospace', fontWeight: 700 }}>
+      {formatBinLocation(item.suggested_bin as unknown as BinInfo)}
+    </span>
+    {canSuggestBin && (
+      <>
+        {/* Áp dụng luôn bin đề xuất thành from_bin */}
+        <button
+          style={{
+            ...s.btnChangeSuggestion,
+            background: '#16a34a',
+          }}
+          onClick={() => handleApplyBin(item)}
+          disabled={applyingItemId === item.id}
+        >
+          {applyingItemId === item.id ? '...' : '✓ Dùng bin này'}
+        </button>
+        {/* Chọn bin khác */}
+        <button
+          style={s.btnChangeSuggestion}
+          onClick={() => setSuggestingItem(item)}
+          disabled={applyingItemId === item.id}
+        >
+          Đổi
+        </button>
+      </>
+    )}
+  </div>
+)}
                     </div>
                   </div>
                 ))}

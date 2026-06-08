@@ -135,3 +135,25 @@ func (h *TransactionHandler) SuggestBin(c *gin.Context) {
     }
     response.OK(c, gin.H{"message": "đã đề xuất bin"})
 }
+
+func (h *TransactionHandler) ApplyBin(c *gin.Context) {
+    txID, err := uuid.Parse(c.Param("id"))
+    if err != nil {
+        response.BadRequest(c, "transaction id không hợp lệ")
+        return
+    }
+
+    var req struct {
+        ItemID uuid.UUID `json:"item_id" binding:"required"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        response.BadRequest(c, "thiếu item_id")
+        return
+    }
+
+    if err := h.svc.ApplyBin(txID, req.ItemID); err != nil {
+        response.BadRequest(c, err.Error())
+        return
+    }
+    response.OK(c, gin.H{"message": "đã áp dụng bin đề xuất thành from_bin"})
+}

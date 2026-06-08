@@ -16,9 +16,11 @@ type StockRepository interface {
 	ListByProduct(productID string) ([]domain.StockItem, error)
 	UpsertItem(tx *gorm.DB, productID uuid.UUID, binID uuid.UUID, delta int) error
 	ListByBin(search string) ([]BinStockRow, error)
+	GetItemsByProduct(productID string) ([]StockItemRow, error)
 }
 
 type stockRepository struct{ db *gorm.DB }
+type stockRepositoryExtra struct{ db *gorm.DB }
 
 type BinStockRow struct {
     WarehouseID   string `json:"warehouse_id"`
@@ -35,6 +37,37 @@ type BinStockRow struct {
     Quantity      int    `json:"quantity"`
 }
 
+type StockItemRow struct {
+	BinID    string
+	Quantity int
+}
+
+
+func (r *stockRepository) GetItemsByProduct(productID string) ([]StockItemRow, error) {
+	 	var rows []StockItemRow
+	 	err := r.db.Raw(`
+	 		SELECT bin_id, quantity
+	 		FROM stock_items
+	 		WHERE product_id = ? AND quantity > 0
+	 		ORDER BY quantity DESC
+	 	`, productID).Scan(&rows).Error
+	 	return rows, err
+}
+func (r *stockRepositoryExtra) GetItemsByProduct(productID string) ([]StockItemRow, error) {
+	var rows []StockItemRow
+	err := r.db.Raw(`
+		SELECT
+			bin_id   AS bin_id,
+			quantity AS quantity
+		FROM stock_items
+		WHERE product_id = ?
+		  AND quantity   > 0
+		ORDER BY quantity DESC
+	`, productID).Scan(&rows).Error
+	return rows, err
+}
+
+	
 func NewStockRepository(db *gorm.DB) StockRepository {
 	return &stockRepository{db: db}
 }

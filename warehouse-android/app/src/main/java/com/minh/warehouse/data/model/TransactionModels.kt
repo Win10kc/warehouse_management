@@ -78,10 +78,21 @@ data class TransactionItemDetail(
     val product: ProductSummary?,
     val from_bin: BinInfo?,
     val to_bin: BinInfo?,
+    val suggested_bin_id: String?,   // UUID nếu có
+    val suggested_bin: BinInfo?,    // enriched — có từ GET /transactions/:id
     val quantity_requested: Int,
     val quantity_actual: Int,
     val scan_method: String?
-)
+) {
+    // Trạng thái xác nhận của item trong Pick List
+    // true = staff đã scan/confirm item này
+    @Transient
+    var isConfirmed: Boolean = false
+
+    @Transient
+    var actualQty: Int = quantity_requested
+}
+
 
 // ── Sprint 4.3: Phiếu của tôi ──────────────────────────────────
 
@@ -175,3 +186,18 @@ data class BinStockRow(
 data class BinStockResponse(
     val data: List<BinStockRow>
 )
+
+// ── Sprint 6.3: Complete Transaction ──────────────────────────
+
+data class CompleteItemInput(
+    val product_id:      String,
+    val from_bin_id:     String?,
+    val to_bin_id:       String?,
+    val quantity_actual: Int
+)
+
+data class CompleteTransactionRequest(
+    val items: List<CompleteItemInput>
+)
+
+

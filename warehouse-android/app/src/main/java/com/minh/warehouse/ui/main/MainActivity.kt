@@ -19,6 +19,7 @@ import com.minh.warehouse.ui.scan.ScanActivity
 import com.minh.warehouse.ui.stockcount.StockCountActivity
 import com.minh.warehouse.ui.transaction.ProductSearchActivity
 import com.minh.warehouse.ui.transaction.TransactionFormActivity
+import com.minh.warehouse.ui.picklist.PickListActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
         val btnCreateTransaction = findViewById<Button>(R.id.btnCreateTransaction)
         val btnMyTransactions = findViewById<Button>(R.id.btnMyTransactions)
         val btnStockCount = findViewById<Button>(R.id.btnStockCount)
+        val btnPickList = findViewById<Button>(R.id.btnPickList)
 
         tvWelcome.text = "Warehouse App — Đã đăng nhập"
 
@@ -145,6 +147,14 @@ class MainActivity : AppCompatActivity() {
         btnStockCount.setOnClickListener {
             startActivity(Intent(this, StockCountActivity::class.java))
 
+        }
+        btnPickList.setOnClickListener {
+            val intent = Intent(this, PickListActivity::class.java)
+
+            // truyền transaction id nếu cần
+            intent.putExtra("transaction_id", "YOUR_TX_ID")
+
+            startActivity(intent)
         }
     }
     override fun onDestroy() {

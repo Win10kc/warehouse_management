@@ -41,6 +41,12 @@
             android:name=".ui.transaction.ProductSearchActivity"
             android:label="Chọn sản phẩm"
             android:theme="@style/Theme.WarehouseApp"/>
+
+        <activity
+            android:name=".ui.picklist.PickListActivity"
+            android:label="Lệnh xuất kho"
+            android:theme="@style/Theme.WarehouseApp"/>
+
         <activity
              android:name=".ui.stockcount.StockCountActivity"
              android:label="Kiểm kê kho"

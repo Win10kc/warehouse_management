@@ -4,12 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"log"
 
 	"warehouse-backend/internal/domain"
 	"warehouse-backend/internal/repository"
 	ws "warehouse-backend/internal/websocket"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // ─── Request types ────────────────────────────────────────────
@@ -61,6 +63,7 @@ type TransactionService interface {
 	Reject(id string) error
 	SuggestBin(txID uuid.UUID, itemID uuid.UUID, binID uuid.UUID, managerID string) error
 	CreateCount(createdByID string, req StockCountRequest) (*domain.Transaction, error)
+	ApplyBin(txID uuid.UUID, itemID uuid.UUID) error
 }
 
 // ─── Implementation ───────────────────────────────────────────
@@ -100,7 +103,10 @@ func (s *transactionService) GetByID(id string) (*domain.Transaction, error) {
 	return s.txRepo.FindByID(id)
 }
 
-// Create — tạo phiếu ở trạng thái pending
+// ─── Create ───────────────────────────────────────────────────
+// Tạo phiếu ở trạng thái pending.
+// Nếu type=export: KHÔNG yêu cầu from_bin_id từ client —
+// hệ thống tự tra stock_items và điền suggested_bin_id.
 func (s *transactionService) Create(createdByID string, req CreateTransactionRequest) (*domain.Transaction, error) {
 	userID, err := uuid.Parse(createdByID)
 	if err != nil {
@@ -123,8 +129,10 @@ func (s *transactionService) Create(createdByID string, req CreateTransactionReq
 			return nil, fmt.Errorf("invalid product_id: %s", i.ProductID)
 		}
 
-		if (req.Type == domain.TypeExport || req.Type == domain.TypeTransfer) && i.FromBinID == "" {
-			return nil, fmt.Errorf("from_bin_id required for %s", req.Type)
+		// Export: KHÔNG bắt buộc from_bin_id — sẽ auto-suggest sau
+		// Transfer: vẫn yêu cầu cả hai
+		if req.Type == domain.TypeTransfer && i.FromBinID == "" {
+			return nil, fmt.Errorf("from_bin_id required for transfer")
 		}
 		if (req.Type == domain.TypeImport || req.Type == domain.TypeTransfer) && i.ToBinID == "" {
 			return nil, fmt.Errorf("to_bin_id required for %s", req.Type)
@@ -170,6 +178,16 @@ func (s *transactionService) Create(createdByID string, req CreateTransactionReq
 		dbTx.Rollback()
 		return nil, err
 	}
+
+	// ── Auto-suggest bin cho phiếu xuất ──────────────────────
+	// Chạy trong cùng DB transaction để atomic
+	if req.Type == domain.TypeExport {
+		if err := s.autoSuggestBins(dbTx, items); err != nil {
+			dbTx.Rollback()
+			return nil, fmt.Errorf("không thể tự động gợi ý bin: %w", err)
+		}
+	}
+
 	if err := dbTx.Commit().Error; err != nil {
 		return nil, err
 	}
@@ -189,10 +207,88 @@ func (s *transactionService) Create(createdByID string, req CreateTransactionReq
 	return result, nil
 }
 
-// CreateCount — tạo phiếu kiểm kê (type="count") từ 1 bin
-// QuantityRequested = tồn kho DB hiện tại (baseline)
-// QuantityActual    = số thực tế staff đếm được (set ngay lúc tạo)
-// Khi Complete: delta = actual - requested → cộng/trừ vào stock
+// ─── autoSuggestBins ──────────────────────────────────────────
+// Tra stock_items cho từng item, chọn bin tối ưu, ghi suggested_bin_id.
+//
+// Logic ưu tiên:
+//   1. Bin có đủ số lượng yêu cầu → chọn bin đó (ưu tiên bin có số lượng
+//      nhỏ nhất đủ dùng, FEFO-like để tránh tồn dư)
+//   2. Không có bin nào đủ → chọn bin có nhiều nhất (staff sẽ lấy tất cả,
+//      phần thiếu báo lại sau) — chỉ gợi ý 1 bin chính
+//
+// NOTE: Sprint 6.3 scope chỉ gợi ý 1 bin/item (suggested_bin_id là 1 UUID).
+// Split nhiều bin sẽ là Sprint 6.3b nếu cần — để đơn giản hoá UX Android.
+func (s *transactionService) autoSuggestBins(
+    dbTx *gorm.DB,
+    items []domain.TransactionItem,
+) error {
+	// Dùng stockRepo để lấy stock_items theo product
+	// interface dbTx không expose đủ method, nên dùng GetDB() và update trực tiếp
+	// (đây vẫn nằm trong DB transaction vì dùng chung connection)
+
+
+	for _, item := range items {
+		// Lấy tất cả bin có sản phẩm này, sắp xếp: đủ số lượng trước, rồi theo qty desc
+		stockItems, err := s.stockRepo.GetItemsByProduct(item.ProductID.String())
+		if err != nil || len(stockItems) == 0 {
+			// Không có tồn kho → bỏ qua, không set suggested_bin_id
+			// (Approve sẽ kiểm tra và báo lỗi nếu thiếu hàng)
+			continue
+		}
+
+		// Tìm bin tốt nhất
+		bestBinID := chooseBestBin(stockItems, item.QuantityRequested)
+		if bestBinID == uuid.Nil {
+			continue
+		}
+
+		// Update suggested_bin_id
+		if err := dbTx.Model(&domain.TransactionItem{}).
+			Where("id = ?", item.ID).
+			Update("suggested_bin_id", bestBinID).
+			Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// chooseBestBin — chọn bin tối ưu từ danh sách stock_items của 1 sản phẩm.
+// Ưu tiên: bin có đủ số lượng & qty nhỏ nhất (dùng hết trước, giảm phân mảnh).
+// Fallback: bin có qty lớn nhất.
+func chooseBestBin(stockItems []repository.StockItemRow, needed int) uuid.UUID {
+	var bestSufficient *repository.StockItemRow // đủ số lượng, qty nhỏ nhất
+	var bestFallback   *repository.StockItemRow // không đủ, qty lớn nhất
+
+	for i := range stockItems {
+		si := &stockItems[i]
+		if si.Quantity <= 0 {
+			continue
+		}
+		if si.Quantity >= needed {
+			if bestSufficient == nil || si.Quantity < bestSufficient.Quantity {
+				bestSufficient = si
+			}
+		} else {
+			if bestFallback == nil || si.Quantity > bestFallback.Quantity {
+				bestFallback = si
+			}
+		}
+	}
+
+	if bestSufficient != nil {
+		id, _ := uuid.Parse(bestSufficient.BinID)
+		return id
+	}
+	if bestFallback != nil {
+		id, _ := uuid.Parse(bestFallback.BinID)
+		return id
+	}
+	return uuid.Nil
+}
+
+// ─── CreateCount ──────────────────────────────────────────────
+
 func (s *transactionService) CreateCount(createdByID string, req StockCountRequest) (*domain.Transaction, error) {
 	userID, err := uuid.Parse(createdByID)
 	if err != nil {
@@ -220,7 +316,6 @@ func (s *transactionService) CreateCount(createdByID string, req StockCountReque
 			return nil, fmt.Errorf("invalid product_id: %s", i.ProductID)
 		}
 
-		// Lấy tồn kho hiện tại trong bin làm baseline
 		dbQty := 0
 		stockItem, err := s.stockRepo.GetItem(i.ProductID, req.BinID)
 		if err == nil && stockItem != nil {
@@ -231,8 +326,8 @@ func (s *transactionService) CreateCount(createdByID string, req StockCountReque
 			ID:                uuid.New(),
 			TransactionID:     t.ID,
 			ProductID:         productID,
-			ToBinID:           &binID,  // bin đang được kiểm kê
-			QuantityRequested: dbQty,   // baseline = DB qty lúc tạo phiếu
+			ToBinID:           &binID,
+			QuantityRequested: dbQty,
 			QuantityActual:    i.ActualQty,
 			ScanMethod:        "count",
 		}
@@ -272,7 +367,8 @@ func (s *transactionService) CreateCount(createdByID string, req StockCountReque
 	return result, nil
 }
 
-// Approve — pending → processing
+// ─── Approve ──────────────────────────────────────────────────
+
 func (s *transactionService) Approve(id string, approvedByID string) (*domain.Transaction, error) {
 	t, err := s.txRepo.FindByID(id)
 	if err != nil {
@@ -282,7 +378,6 @@ func (s *transactionService) Approve(id string, approvedByID string) (*domain.Tr
 		return nil, fmt.Errorf("cannot approve: status is '%s'", t.Status)
 	}
 
-	// Kiểm tra tồn kho cho phiếu xuất/chuyển (không áp dụng cho count)
 	if t.Type == domain.TypeExport || t.Type == domain.TypeTransfer {
 		for _, item := range t.Items {
 			summary, err := s.stockRepo.GetSummary(item.ProductID.String())
@@ -328,7 +423,8 @@ func (s *transactionService) Approve(id string, approvedByID string) (*domain.Tr
 	return t, nil
 }
 
-// Complete — processing → done, ghi stock, broadcast WS
+// ─── Complete ─────────────────────────────────────────────────
+
 func (s *transactionService) Complete(id string, req CompleteTransactionRequest) (*domain.Transaction, error) {
 	t, err := s.txRepo.FindByID(id)
 	if err != nil {
@@ -356,12 +452,9 @@ func (s *transactionService) Complete(id string, req CompleteTransactionRequest)
 			return nil, err
 		}
 
-		// ── Tính delta theo loại phiếu ──────────────────────
 		var delta int
 		switch t.Type {
 		case domain.TypeCount:
-			// Lấy baseline từ QuantityRequested của item gốc
-			// (được set = DB qty lúc tạo phiếu trong CreateCount)
 			baseline := 0
 			for _, orig := range t.Items {
 				if orig.ProductID.String() == actual.ProductID {
@@ -370,18 +463,12 @@ func (s *transactionService) Complete(id string, req CompleteTransactionRequest)
 				}
 			}
 			delta = actual.QuantityActual - baseline
-			// delta > 0 → thực tế nhiều hơn DB → cộng thêm
-			// delta < 0 → thực tế ít hơn DB   → trừ đi
-			// delta = 0 → khớp, không cần update stock
-
 		case domain.TypeExport:
 			delta = -actual.QuantityActual
-
-		default: // import, transfer
+		default:
 			delta = actual.QuantityActual
 		}
 
-		// Bỏ qua nếu không có chênh lệch (tối ưu cho count)
 		if delta == 0 {
 			continue
 		}
@@ -391,11 +478,10 @@ func (s *transactionService) Complete(id string, req CompleteTransactionRequest)
 			return nil, err
 		}
 
-		// Xác định binID cần cập nhật
+		// Xác định binID: export dùng suggested_bin_id nếu from_bin_id không có
 		var binIDStr string
 		switch t.Type {
 		case domain.TypeCount:
-			// bin đang kiểm kê được lưu ở ToBinID trong CreateCount
 			for _, orig := range t.Items {
 				if orig.ProductID.String() == actual.ProductID && orig.ToBinID != nil {
 					binIDStr = orig.ToBinID.String()
@@ -403,7 +489,17 @@ func (s *transactionService) Complete(id string, req CompleteTransactionRequest)
 				}
 			}
 		case domain.TypeExport:
-			binIDStr = actual.FromBinID
+			// Ưu tiên from_bin_id (staff đã xác nhận), fallback suggested_bin_id
+			if actual.FromBinID != "" {
+				binIDStr = actual.FromBinID
+			} else {
+				for _, orig := range t.Items {
+					if orig.ProductID.String() == actual.ProductID && orig.SuggestedBinID != nil {
+						binIDStr = orig.SuggestedBinID.String()
+						break
+					}
+				}
+			}
 		default:
 			binIDStr = actual.ToBinID
 		}
@@ -434,7 +530,6 @@ func (s *transactionService) Complete(id string, req CompleteTransactionRequest)
 		return nil, err
 	}
 
-	// Broadcast và alert — ngoài DB transaction
 	for _, actual := range req.Items {
 		product, err := s.productRepo.FindByID(actual.ProductID)
 		if err != nil {
@@ -445,7 +540,6 @@ func (s *transactionService) Complete(id string, req CompleteTransactionRequest)
 			continue
 		}
 
-		// Tính lại delta cho broadcast (giống logic trên)
 		var delta int
 		switch t.Type {
 		case domain.TypeCount:
@@ -464,7 +558,7 @@ func (s *transactionService) Complete(id string, req CompleteTransactionRequest)
 		}
 
 		if delta == 0 {
-			continue // không broadcast nếu không có chênh lệch
+			continue
 		}
 
 		s.hub.Publish(ws.EventStockUpdate, ws.StockUpdatePayload{
@@ -487,7 +581,8 @@ func (s *transactionService) Complete(id string, req CompleteTransactionRequest)
 	return s.txRepo.FindByID(id)
 }
 
-// Reject — pending/processing → rejected
+// ─── Reject ───────────────────────────────────────────────────
+
 func (s *transactionService) Reject(id string) error {
 	t, err := s.txRepo.FindByID(id)
 	if err != nil {
@@ -508,27 +603,23 @@ func (s *transactionService) Reject(id string) error {
 	return nil
 }
 
-// ─── Helper ───────────────────────────────────────────────────
-
-func generateTxCode(txType domain.TransactionType) string {
-	prefix := map[domain.TransactionType]string{
-		domain.TypeImport:   "IMP",
-		domain.TypeExport:   "EXP",
-		domain.TypeTransfer: "TRF",
-		domain.TypeCount:    "CNT",
-	}[txType]
-	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixMilli())
-}
-
-// ─── SuggestBin ───────────────────────────────────────────────
+// ─── SuggestBin (manual — manager chọn thủ công) ─────────────
 
 func (s *transactionService) SuggestBin(txID uuid.UUID, itemID uuid.UUID, binID uuid.UUID, managerID string) error {
+	log.Printf(
+		"SuggestBin: tx=%s item=%s newBin=%s",
+		txID,
+		itemID,
+		binID,
+	)
 	t, err := s.txRepo.FindByID(txID.String())
 	if err != nil {
 		return err
 	}
-	if t.Status != domain.StatusProcessing {
-		return fmt.Errorf("chỉ có thể đề xuất bin khi phiếu đang ở trạng thái processing")
+	if t.Status != domain.StatusPending {
+		return fmt.Errorf(
+			"chỉ có thể đề xuất bin khi phiếu đang ở trạng thái pending",
+		)
 	}
 
 	var item *domain.TransactionItem
@@ -550,6 +641,11 @@ func (s *transactionService) SuggestBin(txID uuid.UUID, itemID uuid.UUID, binID 
 	if err := s.txRepo.UpdateItemSuggestedBin(itemID, binID); err != nil {
 		return err
 	}
+	log.Printf(
+		"Update suggested_bin_id success: item=%s bin=%s",
+		itemID,
+		binID,
+	)
 
 	s.hub.Publish(ws.EventBinSuggestion, ws.BinSuggestionPayload{
 		TransactionID:       t.ID.String(),
@@ -561,4 +657,42 @@ func (s *transactionService) SuggestBin(txID uuid.UUID, itemID uuid.UUID, binID 
 		CreatedByID:         t.CreatedByID.String(),
 	})
 	return nil
+}
+
+func (s *transactionService) ApplyBin(txID uuid.UUID, itemID uuid.UUID) error {
+    t, err := s.txRepo.FindByID(txID.String())
+    if err != nil {
+        return err
+    }
+    if t.Status != domain.StatusPending && t.Status != domain.StatusProcessing {
+        return fmt.Errorf("chỉ áp dụng bin khi phiếu đang pending hoặc processing")
+    }
+
+    var item *domain.TransactionItem
+    for i := range t.Items {
+        if t.Items[i].ID == itemID {
+            item = &t.Items[i]
+            break
+        }
+    }
+    if item == nil {
+        return fmt.Errorf("item không thuộc phiếu này")
+    }
+    if item.SuggestedBinID == nil {
+        return fmt.Errorf("item chưa có bin đề xuất")
+    }
+
+    return s.txRepo.ApplyBin(itemID, *item.SuggestedBinID)
+}
+
+// ─── Helper ───────────────────────────────────────────────────
+
+func generateTxCode(txType domain.TransactionType) string {
+	prefix := map[domain.TransactionType]string{
+		domain.TypeImport:   "IMP",
+		domain.TypeExport:   "EXP",
+		domain.TypeTransfer: "TRF",
+		domain.TypeCount:    "CNT",
+	}[txType]
+	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixMilli())
 }

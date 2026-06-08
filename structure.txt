@@ -127,10 +127,7 @@
 │   │   └── websocket
 │   │       └── hub.go
 │   ├── migrations
-│   │   ├── 001_init.sql
-│   │   ├── 002_qr_rfid.sql
-│   │   ├── 003_product_requests.sql
-│   │   └── 004_suppliers.sql
+│   │   └── 000_migrate_all.sql
 │   └── pkg
 │       ├── database
 │       │   ├── postgres.go
@@ -188,4 +185,4 @@
     ├── tsconfig.node.json
     └── vite.config.ts
 
-57 directories, 132 files
+57 directories, 129 files

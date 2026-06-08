@@ -32,6 +32,20 @@ interface ApiService {
         @Query("created_by_me")   createdByMe: Boolean = false
     ): Response<TransactionListResponse>
 
+    // ── Sprint 6.3: lấy chi tiết phiếu kèm suggested_bin ─────
+    @GET("api/v1/transactions/{id}")
+    suspend fun getTransactionById(
+        @Path("id") id: String
+    ): Response<TransactionResponse>
+
+    // ── Sprint 6.3: hoàn tất phiếu từ Android ─────────────────
+    @PUT("api/v1/transactions/{id}/complete")
+    suspend fun completeTransaction(
+        @Path("id") id: String,
+        @Body req: CompleteTransactionRequest
+    ): Response<TransactionResponse>
+
+
     @POST("api/v1/product-requests")
     suspend fun createProductRequest(
         @Body req: CreateProductRequestBody
