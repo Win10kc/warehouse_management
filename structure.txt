@@ -1,0 +1,191 @@
+.
+├── DEPLOYMENT_LINUX.md
+├── Docs
+│   ├── Data Flow.pdf
+│   └── Detail fucntions.pdf
+├── README.md
+├── scripts
+│   ├── deploy.sh
+│   ├── migrate.sh
+│   └── seed.sh
+├── structure.txt
+├── warehouse-android
+│   ├── app
+│   │   ├── build
+│   │   │   ├── generated
+│   │   │   ├── intermediates
+│   │   │   ├── kotlin
+│   │   │   └── outputs
+│   │   ├── build.gradle.kts
+│   │   ├── .gitignore
+│   │   ├── proguard-rules.pro
+│   │   └── src
+│   │       ├── main
+│   │       └── test
+│   ├── build.gradle.kts
+│   ├── .gitignore
+│   ├── .gradle
+│   │   ├── 8.9
+│   │   │   ├── checksums
+│   │   │   ├── dependencies-accessors
+│   │   │   ├── executionHistory
+│   │   │   ├── expanded
+│   │   │   ├── fileChanges
+│   │   │   ├── fileHashes
+│   │   │   ├── gc.properties
+│   │   │   └── vcsMetadata
+│   │   ├── buildOutputCleanup
+│   │   │   ├── buildOutputCleanup.lock
+│   │   │   ├── cache.properties
+│   │   │   └── outputFiles.bin
+│   │   ├── config.properties
+│   │   ├── file-system.probe
+│   │   └── vcs-1
+│   │       └── gc.properties
+│   ├── gradle
+│   │   ├── libs.versions.toml
+│   │   └── wrapper
+│   │       ├── gradle-wrapper.jar
+│   │       └── gradle-wrapper.properties
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   ├── .idea
+│   │   ├── AndroidProjectSystem.xml
+│   │   ├── caches
+│   │   │   └── deviceStreaming.xml
+│   │   ├── codeStyles
+│   │   │   ├── codeStyleConfig.xml
+│   │   │   └── Project.xml
+│   │   ├── compiler.xml
+│   │   ├── deploymentTargetSelector.xml
+│   │   ├── deviceManager.xml
+│   │   ├── .gitignore
+│   │   ├── gradle.xml
+│   │   ├── kotlinc.xml
+│   │   ├── migrations.xml
+│   │   ├── misc.xml
+│   │   ├── .name
+│   │   ├── runConfigurations.xml
+│   │   ├── vcs.xml
+│   │   ├── warehouse-android.iml
+│   │   └── workspace.xml
+│   ├── .kotlin
+│   │   └── sessions
+│   ├── local.properties
+│   └── settings.gradle.kts
+├── warehouse-backend
+│   ├── .air.toml
+│   ├── build
+│   │   └── warehouse-server
+│   ├── cmd
+│   │   └── server
+│   │       └── main.go
+│   ├── config
+│   │   └── config.go
+│   ├── .env
+│   ├── gen_hash.go
+│   ├── go.mod
+│   ├── go.sum
+│   ├── internal
+│   │   ├── domain
+│   │   │   ├── product.go
+│   │   │   ├── product_request.go
+│   │   │   ├── stock.go
+│   │   │   ├── supplier.go
+│   │   │   ├── transaction.go
+│   │   │   ├── user.go
+│   │   │   └── warehouse.go
+│   │   ├── handler
+│   │   │   ├── admin_handler.go
+│   │   │   ├── auth_handler.go
+│   │   │   ├── product_handler.go
+│   │   │   ├── product_request_handler.go
+│   │   │   ├── report_handler.go
+│   │   │   ├── stock_handler.go
+│   │   │   ├── supplier_handler.go
+│   │   │   ├── transaction_handler.go
+│   │   │   └── warehouse_handler.go
+│   │   ├── middleware
+│   │   │   └── jwt.go
+│   │   ├── repository
+│   │   │   ├── product_repository.go
+│   │   │   ├── product_request_repository.go
+│   │   │   ├── stock_repository.go
+│   │   │   ├── supplier_repository.go
+│   │   │   ├── transaction_repository.go
+│   │   │   ├── user_repository.go
+│   │   │   └── warehouse_repository.go
+│   │   ├── service
+│   │   │   ├── admin_service.go
+│   │   │   ├── alert_service.go
+│   │   │   ├── auth_service.go
+│   │   │   ├── product_service.go
+│   │   │   ├── supplier_service.go
+│   │   │   ├── transaction_service.go
+│   │   │   └── warehouse_service.go
+│   │   └── websocket
+│   │       └── hub.go
+│   ├── migrations
+│   │   ├── 001_init.sql
+│   │   ├── 002_qr_rfid.sql
+│   │   ├── 003_product_requests.sql
+│   │   └── 004_suppliers.sql
+│   └── pkg
+│       ├── database
+│       │   ├── postgres.go
+│       │   └── redis.go
+│       └── response
+│           └── response.go
+└── warehouse-frontend
+    ├── .env
+    ├── eslint.config.js
+    ├── .gitignore
+    ├── index.html
+    ├── package.json
+    ├── pnpm-lock.yaml
+    ├── public
+    │   ├── favicon.svg
+    │   └── icons.svg
+    ├── README.md
+    ├── src
+    │   ├── api
+    │   │   ├── axios.ts
+    │   │   ├── productApi.ts
+    │   │   └── transactionApi.ts
+    │   ├── App.css
+    │   ├── App.tsx
+    │   ├── assets
+    │   │   ├── hero.png
+    │   │   ├── react.svg
+    │   │   └── vite.svg
+    │   ├── components
+    │   │   ├── AlertBadge.tsx
+    │   │   └── ExportPanel.tsx
+    │   ├── hooks
+    │   │   └── useSocket.ts
+    │   ├── index.css
+    │   ├── main.tsx
+    │   ├── pages
+    │   │   ├── AdminUsersPage.tsx
+    │   │   ├── DashboardPage.tsx
+    │   │   ├── LoginPage.tsx
+    │   │   ├── ProductRequestsPage.tsx
+    │   │   ├── ProductsPage.tsx
+    │   │   ├── SKUReportPage.tsx
+    │   │   ├── StockLocationsPage.tsx
+    │   │   ├── TransactionCreatePage.tsx
+    │   │   ├── TransactionDetailPage.tsx
+    │   │   ├── TransactionListPage.tsx
+    │   │   └── WarehouseManagerPage.tsx
+    │   ├── store
+    │   │   ├── authStore.ts
+    │   │   └── stockStore.ts
+    │   └── utils
+    │       └── exportUtils.ts
+    ├── tsconfig.app.json
+    ├── tsconfig.json
+    ├── tsconfig.node.json
+    └── vite.config.ts
+
+57 directories, 132 files

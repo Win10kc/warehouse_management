@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/wh_bg">
+
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/wh_surface"
+        android:elevation="0dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:title="KIỂM KÊ KHO"
+        app:navigationIcon="?attr/homeAsUpIndicator"/>
+
+    <!-- Amber underline -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@color/wh_amber"/>
+
+    <!-- STATE 1: Chưa scan bin — camera fullscreen -->
+    <FrameLayout
+        android:id="@+id/layoutScan"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible"
+        android:background="#000">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <View
+            android:id="@+id/scanFrame"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
+            android:layout_gravity="center"
+            android:translationY="-40dp"
+            android:background="@drawable/scan_frame"/>
+
+        <!-- Overlay hint text with semi-transparent bg -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="330dp"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvScanHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quét QR của bin cần kiểm kê"
+                android:textColor="#F5F0E8"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.04"
+                android:background="#88000000"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- STATE 2: Đã scan bin — form nhập liệu -->
+    <ScrollView
+        android:id="@+id/layoutCount"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Bin info card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/wh_surface"
+                app:cardCornerRadius="4dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="BIN ĐANG KIỂM KÊ"
+                        android:textSize="9sp"
+                        android:textColor="@color/wh_amber"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.15"
+                        android:layout_marginBottom="6dp"/>
+
+                    <TextView
+                        android:id="@+id/tvBinCode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/wh_amber"
+                        android:fontFamily="monospace"
+                        android:layout_marginBottom="2dp"/>
+
+                    <TextView
+                        android:id="@+id/tvBinId"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="10sp"
+                        android:textColor="@color/wh_text_muted"
+                        android:fontFamily="monospace"
+                        android:layout_marginBottom="10dp"/>
+
+                    <Button
+                        android:id="@+id/btnScanOtherBin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="QUÉT BIN KHÁC"
+                        android:textColor="@color/wh_text_secondary"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.08"
+                        android:textSize="11sp"
+                        android:background="@drawable/bg_secondary_button"
+                        android:stateListAnimator="@null"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"/>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Loading products -->
+            <ProgressBar
+                android:id="@+id/progressProducts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:indeterminateTint="@color/wh_amber"
+                android:visibility="gone"/>
+
+            <!-- Empty state -->
+            <TextView
+                android:id="@+id/tvEmptyBin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bin này chưa có sản phẩm nào trong DB.\nBạn vẫn có thể tạo phiếu nếu thực tế có hàng."
+                android:textColor="@color/wh_text_muted"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:padding="20dp"
+                android:visibility="gone"/>
+
+            <!-- Section label products -->
+            <TextView
+                android:id="@+id/tvProductsLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SẢN PHẨM TRONG BIN"
+                android:textSize="9sp"
+                android:textColor="@color/wh_amber"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="10dp"
+                android:visibility="gone"/>
+
+            <!-- Dynamic product items container -->
+            <LinearLayout
+                android:id="@+id/containerItems"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+            <!-- Note label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GHI CHÚ (tuỳ chọn)"
+                android:textSize="9sp"
+                android:textColor="@color/wh_text_secondary"
+                android:textStyle="bold"
+                android:letterSpacing="0.12"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="6dp"/>
+
+            <EditText
+                android:id="@+id/etNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Ví dụ: Kiểm kê định kỳ tháng 6..."
+                android:inputType="textMultiLine"
+                android:minLines="2"
+                android:background="@drawable/bg_input_field"
+                android:textColor="@color/wh_text_primary"
+                android:textColorHint="@color/wh_text_muted"
+                android:textSize="14sp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:layout_marginBottom="12dp"/>
+
+            <TextView
+                android:id="@+id/tvSubmitError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/wh_red"
+                android:textSize="13sp"
+                android:visibility="gone"
+                android:layout_marginBottom="8dp"
+                android:text=""/>
+
+            <ProgressBar
+                android:id="@+id/progressSubmit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:indeterminateTint="@color/wh_amber"
+                android:visibility="gone"
+                android:layout_marginBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnSubmitCount"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="TẠO PHIẾU KIỂM KÊ"
+                android:textColor="@color/wh_amber_on"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:textSize="14sp"
+                android:background="@drawable/bg_main_button"
+                android:stateListAnimator="@null"
+                android:layout_marginBottom="24dp"/>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

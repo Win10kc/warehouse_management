@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base dark industrial theme -->
+    <style name="Theme.WarehouseApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#F59E0B</item>
+        <item name="colorPrimaryVariant">#D97706</item>
+        <item name="colorOnPrimary">#1A1A1A</item>
+        <item name="colorSecondary">#F59E0B</item>
+        <item name="colorOnSecondary">#1A1A1A</item>
+        <item name="colorSurface">#242424</item>
+        <item name="colorOnSurface">#F5F0E8</item>
+        <item name="android:colorBackground">#1A1A1A</item>
+        <item name="colorOnBackground">#F5F0E8</item>
+        <item name="colorError">#FF6B6B</item>
+        <item name="android:windowBackground">#1A1A1A</item>
+        <item name="android:textColorPrimary">#F5F0E8</item>
+        <item name="android:textColorSecondary">#A09880</item>
+        <item name="android:textColorHint">#6B6458</item>
+        <item name="android:editTextColor">#F5F0E8</item>
+        <item name="editTextColor">#F5F0E8</item>
+        <item name="editTextBackground">@drawable/bg_input_field</item>
+        <!-- Spinner styling -->
+        <item name="android:spinnerItemStyle">@style/SpinnerItem</item>
+        <item name="android:spinnerDropDownItemStyle">@style/SpinnerDropDownItem</item>
+        <!-- Radio button color -->
+        <item name="colorControlActivated">#F59E0B</item>
+        <item name="colorControlNormal">#6B6458</item>
+        <!-- Scrollbar -->
+        <item name="android:scrollbarThumbVertical">@drawable/scrollbar_thumb</item>
+    </style>
+
+    <style name="SpinnerItem" parent="Widget.AppCompat.TextView.SpinnerItem">
+        <item name="android:textColor">#F5F0E8</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:padding">12dp</item>
+    </style>
+
+    <style name="SpinnerDropDownItem" parent="Widget.AppCompat.DropDownItem.Spinner">
+        <item name="android:textColor">#F5F0E8</item>
+        <item name="android:background">#2E2E2E</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:padding">12dp</item>
+    </style>
+
+    <!-- Amber filled button -->
+    <style name="Widget.Warehouse.Button.Primary" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">#F59E0B</item>
+        <item name="android:textColor">#1A1A1A</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textSize">14sp</item>
+        <item name="cornerRadius">4dp</item>
+        <item name="android:minHeight">52dp</item>
+    </style>
+
+    <!-- Outlined secondary button -->
+    <style name="Widget.Warehouse.Button.Secondary" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">#4A453E</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:textColor">#A09880</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textSize">13sp</item>
+        <item name="cornerRadius">4dp</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="rippleColor">#33F59E0B</item>
+    </style>
+
+    <!-- Danger/logout button -->
+    <style name="Widget.Warehouse.Button.Danger" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">#5C2A2A</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:textColor">#FF6B6B</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textSize">13sp</item>
+        <item name="cornerRadius">4dp</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="rippleColor">#33FF6B6B</item>
+    </style>
+
+    <!-- Toolbar style -->
+    <style name="Widget.Warehouse.Toolbar" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:background">#1A1A1A</item>
+        <item name="titleTextColor">#F5F0E8</item>
+        <item name="titleTextAppearance">@style/TextAppearance.Warehouse.ToolbarTitle</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
+    <style name="TextAppearance.Warehouse.ToolbarTitle" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textColor">#F5F0E8</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.05</item>
+    </style>
+
+    <!-- Card style -->
+    <style name="Widget.Warehouse.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">#242424</item>
+        <item name="cardCornerRadius">6dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">#3A3530</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+</resources>

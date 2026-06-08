@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wh_bg">
+
+    <!--  Top amber accent bar -->
+    <View
+        android:id="@+id/accentBar"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:background="@color/wh_amber"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Logo / icon area -->
+    <LinearLayout
+        android:id="@+id/logoBlock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/accentBar"
+        app:layout_constraintBottom_toTopOf="@id/formCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Warehouse icon using text — no image needed -->
+        <TextView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:text="⬡"
+            android:textSize="48sp"
+            android:textColor="@color/wh_amber"
+            android:gravity="center"/>
+
+        <!-- App name -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="QUẢN LÝ KHO"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/wh_text_primary"
+            android:letterSpacing="0.15"
+            android:layout_marginTop="12dp"/>
+
+        <!-- Tagline -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Warehouse Management System"
+            android:textSize="12sp"
+            android:textColor="@color/wh_text_muted"
+            android:letterSpacing="0.05"
+            android:layout_marginTop="4dp"/>
+
+    </LinearLayout>
+
+    <!-- Form card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/formCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        app:cardBackgroundColor="@color/wh_surface"
+        app:cardCornerRadius="6dp"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.62">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <!-- Section label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ĐĂNG NHẬP"
+                android:textSize="11sp"
+                android:textColor="@color/wh_amber"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Username label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tên đăng nhập"
+                android:textSize="12sp"
+                android:textColor="@color/wh_text_secondary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="6dp"/>
+
+            <!-- Username field -->
+            <EditText
+                android:id="@+id/etUsername"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:hint="username"
+                android:inputType="text"
+                android:background="@drawable/bg_input_field"
+                android:textColor="@color/wh_text_primary"
+                android:textColorHint="@color/wh_text_muted"
+                android:textSize="15sp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="16dp"
+                android:singleLine="true"/>
+
+            <!-- Password label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mật khẩu"
+                android:textSize="12sp"
+                android:textColor="@color/wh_text_secondary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="6dp"/>
+
+            <!-- Password field -->
+            <EditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:hint="••••••••"
+                android:inputType="textPassword"
+                android:background="@drawable/bg_input_field"
+                android:textColor="@color/wh_text_primary"
+                android:textColorHint="@color/wh_text_muted"
+                android:textSize="15sp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="8dp"
+                android:singleLine="true"/>
+
+            <!-- Error text -->
+            <TextView
+                android:id="@+id/tvError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/wh_red"
+                android:textSize="13sp"
+                android:layout_marginBottom="16dp"
+                android:minHeight="16dp"
+                android:text=""/>
+
+            <!-- Login button -->
+            <Button
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="ĐĂNG NHẬP"
+                android:textColor="@color/wh_amber_on"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:textSize="14sp"
+                android:background="@drawable/bg_main_button"
+                android:stateListAnimator="@null"/>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Bottom version tag -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="v6.6"
+        android:textSize="11sp"
+        android:textColor="@color/wh_text_muted"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000">
+
+    <!-- Camera preview fullscreen -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Top amber bar to stay on-brand even over camera -->
+    <View
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:background="@color/wh_amber"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- QR scan frame -->
+    <View
+        android:id="@+id/scanFrame"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:background="@drawable/scan_frame"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.4"/>
+
+    <!-- Hint label below frame -->
+    <TextView
+        android:id="@+id/tvHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Đưa mã QR vào khung"
+        android:textColor="@color/wh_text_primary"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.04"
+        android:background="#88000000"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintTop_toBottomOf="@id/scanFrame"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"/>
+
+    <!-- Result card — hidden by default, appears after scan -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardResult"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="4dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/wh_surface"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="32dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Amber top accent line inside card -->
+            <View
+                android:layout_width="28dp"
+                android:layout_height="2dp"
+                android:background="@color/wh_amber"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Scan type label -->
+            <TextView
+                android:id="@+id/tvScanType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="@color/wh_amber"
+                android:textStyle="bold"
+                android:letterSpacing="0.12"
+                android:layout_marginBottom="6dp"/>
+
+            <!-- Product name -->
+            <TextView
+                android:id="@+id/tvProductName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/wh_text_primary"
+                android:layout_marginBottom="4dp"/>
+
+            <!-- SKU -->
+            <TextView
+                android:id="@+id/tvSku"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="@color/wh_text_muted"
+                android:fontFamily="monospace"
+                android:layout_marginBottom="14dp"/>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/wh_border"
+                android:layout_marginBottom="14dp"/>
+
+            <!-- Create transaction button -->
+            <Button
+                android:id="@+id/btnCreateTransaction"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="TẠO PHIẾU XUẤT / NHẬP"
+                android:textColor="@color/wh_amber_on"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:textSize="13sp"
+                android:background="@drawable/bg_main_button"
+                android:stateListAnimator="@null"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- Scan again button -->
+            <Button
+                android:id="@+id/btnScanAgain"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="QUÉT LẠI"
+                android:textColor="@color/wh_text_secondary"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:textSize="12sp"
+                android:background="@drawable/bg_secondary_button"
+                android:stateListAnimator="@null"/>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

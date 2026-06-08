@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/wh_bg">
+
+    <!-- Header bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/wh_surface"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp">
+
+        <!-- Top row: icon + title -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="QUẢN LÝ KHO"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/wh_text_primary"
+                android:letterSpacing="0.1"/>
+
+            <!-- Status dot -->
+            <TextView
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="#4ADE80"
+                android:layout_marginEnd="6dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ONLINE"
+                android:textSize="10sp"
+                android:textColor="#4ADE80"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"/>
+
+        </LinearLayout>
+
+        <!-- Welcome text -->
+        <TextView
+            android:id="@+id/tvWelcome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="@color/wh_text_secondary"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Amber underline -->
+        <View
+            android:layout_width="32dp"
+            android:layout_height="2dp"
+            android:background="@color/wh_amber"
+            android:layout_marginTop="12dp"/>
+
+    </LinearLayout>
+
+    <!-- Scrollable content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Section: Operations -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="THAO TÁC KHO"
+                android:textSize="11sp"
+                android:textColor="@color/wh_amber"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- QR/NFC button — primary action -->
+            <Button
+                android:id="@+id/btnScan"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="⬡  QUÉT QR / NFC"
+                android:textColor="@color/wh_amber_on"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:textSize="14sp"
+                android:background="@drawable/bg_main_button"
+                android:stateListAnimator="@null"
+                android:layout_marginBottom="10dp"/>
+
+            <!-- Create transaction -->
+            <Button
+                android:id="@+id/btnCreateTransaction"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="TẠO PHIẾU THỦ CÔNG"
+                android:textColor="@color/wh_amber_on"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:textSize="13sp"
+                android:background="@drawable/bg_secondary_button"
+                android:stateListAnimator="@null"
+                android:layout_marginBottom="10dp"/>
+
+            <!-- Stock count -->
+            <Button
+                android:id="@+id/btnStockCount"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="KIỂM KÊ KHO"
+                android:textColor="@color/wh_amber_on"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:textSize="13sp"
+                android:background="@drawable/bg_secondary_button"
+                android:stateListAnimator="@null"
+                android:layout_marginBottom="24dp"/>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/wh_border"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Section: My work -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CÔNG VIỆC CỦA TÔI"
+                android:textSize="11sp"
+                android:textColor="@color/wh_amber"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- My transactions — amber highlight -->
+            <Button
+                android:id="@+id/btnMyTransactions"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="PHIẾU CỦA TÔI"
+                android:textColor="@color/wh_amber_on"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:textSize="13sp"
+                android:background="@drawable/bg_secondary_button"
+                android:stateListAnimator="@null"
+                android:layout_marginBottom="24dp"/>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/wh_border"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Logout -->
+            <Button
+                android:id="@+id/btnLogout"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="ĐĂNG XUẤT"
+                android:textColor="@color/wh_red"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:textSize="12sp"
+                android:background="@drawable/bg_danger_button"
+                android:stateListAnimator="@null"/>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

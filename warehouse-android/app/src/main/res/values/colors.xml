@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Core palette -->
+    <color name="wh_bg">#1A1A1A</color>
+    <color name="wh_surface">#242424</color>
+    <color name="wh_surface_raised">#2E2E2E</color>
+    <color name="wh_border">#3A3530</color>
+    <color name="wh_border_light">#4A453E</color>
+
+    <!-- Text -->
+    <color name="wh_text_primary">#F5F0E8</color>
+    <color name="wh_text_secondary">#A09880</color>
+    <color name="wh_text_muted">#6B6458</color>
+
+    <!-- Accent - Amber -->
+    <color name="wh_amber">#F59E0B</color>
+    <color name="wh_amber_dark">#D97706</color>
+    <color name="wh_amber_dim">#3D2F0A</color>
+    <color name="wh_amber_on">#1A1A1A</color>
+
+    <!-- Semantic -->
+    <color name="wh_green">#4ADE80</color>
+    <color name="wh_green_dim">#0F2A1A</color>
+    <color name="wh_red">#FF6B6B</color>
+    <color name="wh_red_dim">#2A0F0F</color>
+    <color name="wh_blue">#60A5FA</color>
+    <color name="wh_blue_dim">#0F1F3A</color>
+
+    <!-- Bin highlight -->
+    <color name="wh_bin_label">#F59E0B</color>
+</resources>
