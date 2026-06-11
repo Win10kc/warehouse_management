@@ -8,10 +8,10 @@ Hệ thống quản lý kho hàng nội bộ gồm 3 thành phần: **Backend AP
 
 ```
 ┌─────────────────┐     ┌─────────────────┐
-│   Web Admin      │     │  Android App     │
-│  React + Vite   │     │  Kotlin (M35)    │
-│  :5173 (dev)    │     │  Scan QR / NFC   │
-└────────┬────────┘     └────────┬─────────┘
+│   Web Admin     │     │  Android App    │
+│  React + Vite   │     │  Kotlin (HT730) │
+│  :5173 (dev)    │     │  Scan QR / NFC  │
+└────────┬────────┘     └────────┬────────┘
          │                       │
          └──────────┬────────────┘
                     │ HTTP / WebSocket
@@ -29,7 +29,7 @@ Hệ thống quản lý kho hàng nội bộ gồm 3 thành phần: **Backend AP
 
 **Web Admin** — Quản trị trung tâm: duyệt phiếu, quản lý sản phẩm, kho bãi, xem tồn kho real-time qua WebSocket.
 
-**Android App** — Công cụ vận hành kho: quét QR/NFC, tạo phiếu nhập/xuất tại thực địa, nhận thông báo real-time.
+**Android App** — Công cụ vận hành kho: quét QR/NFC, tạo phiếu nhập/xuất tại thực địa, nhận thông báo real-time, hoàn tất phiếu trực tiếp tại kho.
 
 ---
 
@@ -325,7 +325,7 @@ quan_ly_kho_2/
 │       └── hooks/useSocket.ts      # WebSocket singleton pub/sub
 ├── warehouse-android/
 │   └── app/src/main/java/com/minh/warehouse/
-│       ├── ui/                     # Activities: Login, Scan, TransactionForm
+│       ├── ui/                     # Activities: Login, Scan, TransactionForm, PickList
 │       ├── data/                   # Retrofit API client, Models, WebSocketManager
 │       └── util/                   # TokenManager, NfcScanHelper
 └── scripts/
@@ -359,13 +359,17 @@ Format message: `{ "event": "...", "data": { ... } }`
 | GET | `/api/v1/auth/me` | JWT | Thông tin user hiện tại |
 | GET | `/api/v1/products` | JWT | Danh sách sản phẩm |
 | GET | `/api/v1/products/scan/:code` | JWT | Tra cứu qua QR/RFID |
-| POST | `/api/v1/products/:id/generate-qr` | JWT | Tạo mã QR |
+| POST | `/api/v1/products/:id/generate-qr` | JWT (admin/manager) | Tạo mã QR |
 | GET/POST | `/api/v1/transactions` | JWT | Danh sách / Tạo phiếu |
 | PUT | `/api/v1/transactions/:id/approve` | JWT (admin/manager) | Duyệt phiếu |
-| PUT | `/api/v1/transactions/:id/complete` | JWT (admin/manager) | Hoàn tất phiếu |
+| PUT | `/api/v1/transactions/:id/complete` | JWT (tất cả) | Hoàn tất phiếu — staff complete từ Android |
 | PUT | `/api/v1/transactions/:id/reject` | JWT (admin/manager) | Từ chối phiếu |
 | PUT | `/api/v1/transactions/:id/suggest-bin` | JWT (admin/manager) | Đề xuất bin mới |
-| GET | `/api/v1/warehouses` | JWT | Danh sách kho (Zone/Rack/Bin) |
+| PUT | `/api/v1/transactions/:id/apply-bin` | JWT (admin/manager) | Áp dụng bin đề xuất thành from_bin |
+| GET | `/api/v1/warehouses` | JWT | Danh sách kho |
+| GET | `/api/v1/warehouses/:id/zones` | JWT | Khu vực trong kho |
+| GET | `/api/v1/warehouses/:id/zones/:zoneId/racks` | JWT | Rack trong khu vực |
+| GET | `/api/v1/warehouses/:id/zones/:zoneId/racks/:rackId/bins` | JWT | Bin trong rack |
 | GET | `/api/v1/stock` | JWT | Tồn kho hiện tại |
 | GET | `/api/v1/stock/locations` | JWT | Bin đang có hàng |
 | POST | `/api/v1/product-requests` | JWT | Báo cáo SP chưa có trong hệ thống |
@@ -379,30 +383,42 @@ Format message: `{ "event": "...", "data": { ... } }`
 **Nhập kho:**
 ```
 Xe hàng đến → Android scan QR → Chọn bin lưu → Tạo phiếu nhập
-→ Web nhận real-time → Admin/Manager duyệt → Hoàn tất → Tồn kho cập nhật
-
+→ Web nhận real-time → Admin/Manager duyệt
+→ Android "Phiếu của tôi" → nút "✓ Hoàn tất nhập" → gọi Complete API
+→ Tồn kho cập nhật
 ```
 
 **Xuất kho:**
 ```
-Lấy lệnh xuất → Android scan QR xác nhận → Tạo phiếu xuất
-→ Admin duyệt → Hoàn tất → Tồn kho giảm
+Android tạo phiếu xuất → hệ thống tự gợi ý bin tối ưu
+→ Web manager xem suggested_bin → bấm "✓ Dùng bin này" (apply-bin)
+→ Duyệt phiếu (backend validate bin đủ hàng)
+→ Android "Phiếu của tôi" → nút "📦 Lấy hàng" → PickListActivity
+→ Staff xác nhận từng item tại kho → Hoàn tất
+→ Tồn kho trừ đúng bin → WebSocket broadcast
+```
 
+**Kiểm kê:**
+```
+Android tạo phiếu kiểm kê (chọn bin, nhập số lượng thực tế)
+→ Manager duyệt
+→ Android "Phiếu của tôi" → nút "✓ Hoàn tất kiểm" → gọi Complete API
+→ Tồn kho điều chỉnh theo delta (thực tế - baseline)
 ```
 
 **Hàng chưa có QR:**
 ```
 Scan không ra → Android báo cáo SP mới → Web nhận alert real-time
 → Admin tạo SKU + generate QR → In nhãn dán lên hàng
-
 ```
 
 **Manager đề xuất đổi bin:**
 ```
-Phiếu đang processing → Manager mở chi tiết phiếu (web)
-→ Bấm "Đổi bin" → Chọn bin mới → Android nhận alert real-time
-→ Staff thấy bin đề xuất trong CompleteModal
-
+Phiếu export đang pending → Manager mở chi tiết phiếu (web)
+→ Thấy suggested_bin → bấm "Đổi" để chọn bin khác (SuggestBin)
+→ Bấm "✓ Dùng bin này" để apply (from_bin_id được set, suggested_bin_id xóa)
+→ Android nhận alert real-time (bin_suggestion event)
+→ Sau khi apply xong mới được Duyệt phiếu
 ```
 
 ---
@@ -417,6 +433,16 @@ Warehouse (Kho)
 ```
 
 Ví dụ hiển thị: `Kho HN › Khu A › RACK-01 › BIN-03`
+
+---
+
+## Phân quyền
+
+| Role | Quyền |
+|---|---|
+| `admin` | Toàn quyền — quản lý user, kho, sản phẩm, duyệt/từ chối phiếu |
+| `manager` | Duyệt/từ chối phiếu, đề xuất bin, xem báo cáo SKU |
+| `staff` (warehouse) | Tạo phiếu, hoàn tất phiếu từ Android, scan QR/NFC |
 
 ---
 
@@ -463,4 +489,4 @@ curl http://localhost:8080/health
 | compileSdk | 36 |
 | targetSdk | 34 |
 | minSdk | 26 |
-| Thiết bị test | Samsung Galaxy M35 (SM-M356B) · Android 16 |
+| Thiết bị test | HT730 · Android +16 |

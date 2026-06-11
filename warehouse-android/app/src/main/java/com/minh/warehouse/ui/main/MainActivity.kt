@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         val btnCreateTransaction = findViewById<Button>(R.id.btnCreateTransaction)
         val btnMyTransactions = findViewById<Button>(R.id.btnMyTransactions)
         val btnStockCount = findViewById<Button>(R.id.btnStockCount)
-        val btnPickList = findViewById<Button>(R.id.btnPickList)
+        
 
         tvWelcome.text = "Warehouse App — Đã đăng nhập"
 
@@ -148,14 +148,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, StockCountActivity::class.java))
 
         }
-        btnPickList.setOnClickListener {
-            val intent = Intent(this, PickListActivity::class.java)
 
-            // truyền transaction id nếu cần
-            intent.putExtra("transaction_id", "YOUR_TX_ID")
-
-            startActivity(intent)
-        }
     }
     override fun onDestroy() {
         super.onDestroy()

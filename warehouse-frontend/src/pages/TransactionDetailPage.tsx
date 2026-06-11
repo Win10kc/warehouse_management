@@ -446,6 +446,10 @@ export default function TransactionDetailPage() {
   const isManagerOrAdmin = role === 'admin' || role === 'manager'
   const canApproveReject = isManagerOrAdmin && tx?.status === 'pending'
   const canComplete      = isManagerOrAdmin && tx?.status === 'processing'
+  const hasUnresolvableBin =
+  tx?.type === 'export' &&
+  tx?.status === 'pending' &&
+  tx?.items.some(i => !i.from_bin_id && !i.suggested_bin)
   const canSuggestBin =
   isManagerOrAdmin &&
   tx?.status === 'pending'
@@ -498,9 +502,14 @@ export default function TransactionDetailPage() {
                 <button style={s.btnReject} onClick={handleReject} disabled={actionLoading}>
                   Từ chối
                 </button>
-                <button style={s.btnApprove(actionLoading)} onClick={handleApprove} disabled={actionLoading}>
-                  {actionLoading ? 'Đang xử lý...' : '✓ Duyệt phiếu'}
-                </button>
+                <button
+  style={s.btnApprove(actionLoading || !!hasUnresolvableBin)}
+  onClick={handleApprove}
+  disabled={actionLoading || !!hasUnresolvableBin}
+  title={hasUnresolvableBin ? 'Có sản phẩm không đủ tồn kho — không thể duyệt' : undefined}
+>
+  {actionLoading ? 'Đang xử lý...' : '✓ Duyệt phiếu'}
+</button>
               </>
             )}
             {canComplete && (
@@ -582,6 +591,16 @@ export default function TransactionDetailPage() {
                           <MetaChip label="Scan" value={item.scan_method} color="#6b7280" />
                         )}
                       </div>
+                      {/* sau dòng hiện suggested_bin badge, thêm: */}
+{tx.type === 'export' && tx.status === 'pending' && !item.from_bin_id && !item.suggested_bin && (
+  <div style={{
+    marginTop: '0.5rem', padding: '0.35rem 0.625rem',
+    background: '#fef2f2', border: '1px solid #fecaca',
+    borderRadius: '0.375rem', fontSize: '0.75rem', color: '#dc2626', fontWeight: 600,
+  }}>
+    ⚠️ Không tìm được bin — sản phẩm này không có tồn kho. Không thể duyệt phiếu.
+  </div>
+)}
 
                       {/* Suggested bin — hiện nổi bật nếu có */}
                       {item.suggested_bin && (
@@ -616,6 +635,15 @@ export default function TransactionDetailPage() {
         </button>
       </>
     )}
+  </div>
+)}
+{tx.type === 'export' && tx.status === 'pending' && !item.from_bin_id && !item.suggested_bin && (
+  <div style={{
+    marginTop: '0.5rem', padding: '0.35rem 0.625rem',
+    background: '#fef2f2', border: '1px solid #fecaca',
+    borderRadius: '0.375rem', fontSize: '0.75rem', color: '#dc2626', fontWeight: 600,
+  }}>
+    ⚠️ Không tìm được bin — sản phẩm này không có tồn kho. Không thể duyệt phiếu.
   </div>
 )}
                     </div>

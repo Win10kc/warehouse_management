@@ -16,7 +16,12 @@ function QRModal({ product, onClose }: { product: Product; onClose: () => void }
     setLoading(true)
     try {
       const res = await productApi.generateQR(product.id)
-      setQrImage(res.qr_image)
+
+      const image = res.qr_image.startsWith('data:')
+        ? res.qr_image
+        : `data:image/png;base64,${res.qr_image}`
+
+      setQrImage(image)
     } catch {
       alert('Không thể tạo QR')
     } finally {
@@ -25,38 +30,124 @@ function QRModal({ product, onClose }: { product: Product; onClose: () => void }
   }
 
   useEffect(() => {
-    if (product.qr_code) {
-      // Hiện QR từ api.qrserver nếu đã có
-      setQrImage(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(product.qr_code)}`)
-    }
-  }, [product])
+    generate()
+  }, [product.id])
+
+  const downloadQR = () => {
+    if (!qrImage) return
+
+    const a = document.createElement('a')
+    a.href = qrImage
+    a.download = `${product.sku}-qr.png`
+    a.click()
+  }
+
+  const printQR = () => {
+    if (!qrImage) return
+
+    const win = window.open('', '_blank')
+
+    if (!win) return
+
+    win.document.write(`
+      <html>
+        <head>
+          <title>${product.sku}</title>
+        </head>
+        <body style="text-align:center;font-family:sans-serif;padding:20px">
+          <h2>${product.name}</h2>
+          <img src="${qrImage}" width="250"/>
+          <p>${product.sku}</p>
+        </body>
+      </html>
+    `)
+
+    win.document.close()
+    win.focus()
+
+    setTimeout(() => {
+      win.print()
+    }, 300)
+  }
 
   return (
     <div style={modal.overlay}>
       <div style={modal.card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>QR Code — {product.name}</h3>
-          <button onClick={onClose} style={modal.btnClose}>✕</button>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1rem',
+          }}
+        >
+          <h3 style={{ margin: 0 }}>
+            QR Code — {product.name}
+          </h3>
+
+          <button onClick={onClose} style={modal.btnClose}>
+            ✕
+          </button>
         </div>
-        <p style={{ margin: '0 0 1rem', fontSize: '0.8rem', color: '#6b7280' }}>
-          SKU: <code style={{ background: '#f3f4f6', padding: '0.1rem 0.4rem', borderRadius: '0.25rem' }}>{product.sku}</code>
-        </p>
-        {qrImage ? (
-          <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-            <img src={qrImage} alt="QR" style={{ width: 200, height: 200, border: '1px solid #e5e7eb', borderRadius: '0.5rem' }} />
-            {product.qr_code && (
-              <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: '#9ca3af' }}>{product.qr_code}</p>
-            )}
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            Đang tạo QR...
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '2rem 0', color: '#9ca3af', fontSize: '0.875rem' }}>
-            Chưa có QR — nhấn nút bên dưới để tạo
-          </div>
-        )}
-        {!product.qr_code && (
-          <button onClick={generate} disabled={loading} style={{ ...modal.btnPrimary, width: '100%' }}>
-            {loading ? 'Đang tạo...' : '✦ Tạo QR Code'}
-          </button>
+          <>
+            {qrImage && (
+              <div style={{ textAlign: 'center' }}>
+                <img
+                  src={qrImage}
+                  alt="QR"
+                  width={220}
+                  height={220}
+                  style={{
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.5rem',
+                  }}
+                />
+
+                <p
+                  style={{
+                    marginTop: '0.75rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {product.sku}
+                </p>
+              </div>
+            )}
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.5rem',
+                marginTop: '1rem',
+              }}
+            >
+              <button
+                onClick={downloadQR}
+                style={{
+                  ...modal.btnPrimary,
+                  flex: 1,
+                }}
+              >
+                📥 Tải PNG
+              </button>
+
+              <button
+                onClick={printQR}
+                style={{
+                  ...modal.btnPrimary,
+                  flex: 1,
+                }}
+              >
+                🖨️ In QR
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

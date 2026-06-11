@@ -3,6 +3,8 @@ package com.minh.warehouse.ui.mytransactions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minh.warehouse.data.api.ApiClient
+import com.minh.warehouse.data.model.CompleteItemInput
+import com.minh.warehouse.data.model.CompleteTransactionRequest
 import com.minh.warehouse.data.model.TransactionSummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,6 +62,44 @@ class MyTransactionsViewModel : ViewModel() {
             } catch (e: Exception) {
                 _state.value = MyTxState.Error(e.message ?: "Lỗi kết nối")
             }
+        }
+    }
+    suspend fun completeTransaction(
+        tx: TransactionSummary
+    ): Result<Unit> {
+        return try {
+
+            val items = tx.items?.map {
+                CompleteItemInput(
+                    product_id = it.product_id,
+                    from_bin_id = it.from_bin?.id,
+                    to_bin_id = it.to_bin?.id,
+                    quantity_actual = if (tx.type == "count")
+                        it.quantity_actual
+                    else
+                        it.quantity_requested
+                )
+            } ?: emptyList()
+
+            val req = CompleteTransactionRequest(items)
+
+            val res =
+                ApiClient.service.completeTransaction(
+                    tx.id,
+                    req
+                )
+
+            if (res.isSuccessful) {
+                load()
+                Result.success(Unit)
+            } else {
+                Result.failure(
+                    Exception("HTTP ${res.code()}")
+                )
+            }
+
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

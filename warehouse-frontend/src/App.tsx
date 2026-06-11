@@ -78,8 +78,11 @@ function NavBar() {
       <NavLink to="/products">📦 Sản phẩm</NavLink>
 
       {(role === 'admin' || role === 'manager') && (
-        <NavLink to="/reports/sku">Báo cáo SKU</NavLink>
-      )}
+  <>
+    <NavLink to="/transactions/create">➕ Tạo phiếu</NavLink>
+    <NavLink to="/reports/sku">Báo cáo SKU</NavLink>
+  </>
+)}
 
       {role === 'admin' && (
         <>

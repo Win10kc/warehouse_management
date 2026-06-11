@@ -124,18 +124,6 @@
                 android:layout_marginBottom="10dp"/>
 
 
-            <Button
-                android:id="@+id/btnPickList"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="LỆNH XUẤT KHO "
-                android:textColor="@color/wh_amber_on"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:textSize="13sp"
-                android:background="@drawable/bg_secondary_button"
-                android:stateListAnimator="@null"
-                android:layout_marginBottom="10dp"/>
 
             <!-- Stock count -->
             <Button

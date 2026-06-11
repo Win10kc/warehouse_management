@@ -37,48 +37,128 @@ function Chevron({ open }: { open: boolean }) {
 }
 
 // ── QR Modal ──────────────────────────────────────────────────
-function QRModal({ binId, binCode, onClose }: { binId: string; binCode: string; onClose: () => void }) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(binId)}&margin=10`
+function QRModal({
+  binId,
+  binCode,
+  onClose,
+}: {
+  binId: string
+  binCode: string
+  onClose: () => void
+}) {
+  const qrUrl =
+    `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(binId)}`
 
-  // Đóng khi click backdrop
-  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose()
+    const downloadQR = async () => {
+      try {
+        const response = await fetch(qrUrl)
+    
+        const blob = await response.blob()
+    
+        const url = window.URL.createObjectURL(blob)
+    
+        const a = document.createElement('a')
+    
+        a.href = url
+        a.download = `${binCode}.png`
+    
+        document.body.appendChild(a)
+    
+        a.click()
+    
+        document.body.removeChild(a)
+    
+        window.URL.revokeObjectURL(url)
+      } catch (err) {
+        console.error(err)
+        alert('Không thể tải QR')
+      }
+    }
+
+  const printQR = () => {
+    const win = window.open('', '_blank')
+
+    if (!win) return
+
+    win.document.write(`
+      <html>
+        <head>
+          <title>${binCode}</title>
+        </head>
+        <body style="text-align:center;font-family:sans-serif;padding:20px">
+          <h2>${binCode}</h2>
+          <img src="${qrUrl}" width="250"/>
+          <p>${binId}</p>
+        </body>
+      </html>
+    `)
+
+    win.document.close()
+
+    setTimeout(() => {
+      win.print()
+    }, 300)
+  }
+
+  const handleBackdrop = (
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
   }
 
   return (
     <div style={ms.backdrop} onClick={handleBackdrop}>
       <div style={ms.modal}>
-        {/* Header */}
         <div style={ms.modalHeader}>
           <div>
             <p style={ms.modalLabel}>QR Code — Bin</p>
             <p style={ms.modalBinCode}>{binCode}</p>
           </div>
-          <button style={ms.closeBtn} onClick={onClose}>✕</button>
+
+          <button style={ms.closeBtn} onClick={onClose}>
+            ✕
+          </button>
         </div>
 
-        {/* QR image */}
         <div style={ms.qrWrap}>
           <img
             src={qrUrl}
-            alt={`QR bin ${binCode}`}
+            alt={binCode}
             width={220}
             height={220}
-            style={{ borderRadius: '0.5rem', display: 'block' }}
           />
         </div>
 
-        {/* Bin ID nhỏ để tham khảo */}
-        <div style={ms.binIdWrap}>
-          <span style={ms.binIdLabel}>Bin ID</span>
-          <span style={ms.binIdValue}>{binId}</span>
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.5rem',
+            marginTop: '1rem',
+          }}
+        >
+          <button
+            onClick={downloadQR}
+            style={s.qrBtn}
+          >
+            📥 Tải PNG
+          </button>
+
+          <button
+            onClick={printQR}
+            style={s.qrBtn}
+          >
+            🖨️ In QR
+          </button>
         </div>
 
-        <p style={ms.hint}>
-          Android scan QR này để bắt đầu kiểm kê bin <strong>{binCode}</strong>
-        </p>
-
-        <button style={ms.closeFullBtn} onClick={onClose}>Đóng</button>
+        <button
+          style={ms.closeFullBtn}
+          onClick={onClose}
+        >
+          Đóng
+        </button>
       </div>
     </div>
   )

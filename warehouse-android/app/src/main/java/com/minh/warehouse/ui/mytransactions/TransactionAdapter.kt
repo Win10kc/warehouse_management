@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -14,37 +15,39 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
-// ─── List item types ──────────────────────────────────────────
 private const val TYPE_HEADER = 0
 private const val TYPE_ITEM   = 1
 
-// ─── Sealed list entry ────────────────────────────────────────
 private sealed class ListEntry {
-    data class Header(val label: String) : ListEntry()
+    data class Header(val label: String)        : ListEntry()
     data class Item(val tx: TransactionSummary) : ListEntry()
 }
 
 class TransactionAdapter(
-    private var items: List<TransactionSummary>
+    private var items: List<TransactionSummary>,
+    // Callback khi staff bấm "Lấy hàng" — chỉ hiện với export + processing
+    private val onPickList: ((TransactionSummary) -> Unit)? = null,
+    private val onComplete: ((TransactionSummary) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var entries: List<ListEntry> = buildEntries(items)
 
-    // ── ViewHolders ──────────────────────────────────────────
     inner class HeaderVH(v: View) : RecyclerView.ViewHolder(v) {
         val tvLabel: TextView = v.findViewById(R.id.tvDateLabel)
     }
 
     inner class ItemVH(v: View) : RecyclerView.ViewHolder(v) {
-        val tvCode     : TextView     = v.findViewById(R.id.tvCode)
-        val tvStatus   : TextView     = v.findViewById(R.id.tvStatus)
-        val tvType     : TextView     = v.findViewById(R.id.tvType)
-        val tvDate     : TextView     = v.findViewById(R.id.tvDate)
-        val tvNote     : TextView     = v.findViewById(R.id.tvNote)
-        val llProducts : LinearLayout = v.findViewById(R.id.llProducts)
+        val tvCode      : TextView     = v.findViewById(R.id.tvCode)
+        val tvStatus    : TextView     = v.findViewById(R.id.tvStatus)
+        val tvType      : TextView     = v.findViewById(R.id.tvType)
+        val tvDate      : TextView     = v.findViewById(R.id.tvDate)
+        val tvNote      : TextView     = v.findViewById(R.id.tvNote)
+        val llProducts  : LinearLayout = v.findViewById(R.id.llProducts)
+        // Nút "Lấy hàng" — chỉ hiện khi type=export AND status=processing
+        val btnPickList : Button       = v.findViewById(R.id.btnPickList)
+        val btnComplete: Button = v.findViewById(R.id.btnComplete)
     }
 
-    // ── Adapter overrides ────────────────────────────────────
     override fun getItemViewType(position: Int) = when (entries[position]) {
         is ListEntry.Header -> TYPE_HEADER
         is ListEntry.Item   -> TYPE_ITEM
@@ -63,22 +66,15 @@ class TransactionAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val entry = entries[position]) {
-            is ListEntry.Header -> bindHeader(holder as HeaderVH, entry)
+            is ListEntry.Header -> (holder as HeaderVH).tvLabel.text = entry.label
             is ListEntry.Item   -> bindItem(holder as ItemVH, entry.tx)
         }
     }
 
-    // ── Bind header ──────────────────────────────────────────
-    private fun bindHeader(h: HeaderVH, entry: ListEntry.Header) {
-        h.tvLabel.text = entry.label
-    }
-
-    // ── Bind item ────────────────────────────────────────────
     private fun bindItem(h: ItemVH, tx: TransactionSummary) {
         val ctx = h.itemView.context
         val needsAttention = tx.status == "pending" || tx.status == "processing"
 
-        // Card highlight nếu cần xử lý
         h.itemView.setBackgroundResource(
             if (needsAttention) R.drawable.bg_transaction_pending
             else R.drawable.bg_transaction_normal
@@ -105,8 +101,7 @@ class TransactionAdapter(
             else       -> tx.type
         }
 
-        // Hiện giờ tạo, và nếu có completed_at thì hiện thêm
-        val createdStr = formatTime(tx.created_at)
+        val createdStr   = formatTime(tx.created_at)
         val completedStr = tx.completed_at?.let { " · Hoàn tất ${formatTime(it)}" } ?: ""
         h.tvDate.text = "🕐 $createdStr$completedStr"
 
@@ -117,7 +112,21 @@ class TransactionAdapter(
             h.tvNote.visibility = View.GONE
         }
 
-        // ── Danh sách sản phẩm ──
+        // ── Nút Pick List ────────────────────────────────────────
+        // Hiện khi: type=export AND status=processing AND callback được cung cấp
+        val showPickList = tx.type == "export" && tx.status == "processing" && onPickList != null
+        val showComplete = (tx.type == "import" || tx.type == "count") && tx.status == "processing" && onComplete != null
+        h.btnPickList.visibility = if (showPickList) View.VISIBLE else View.GONE
+        if (showComplete) {
+            h.btnComplete.setOnClickListener {
+                onComplete?.invoke(tx)
+            }
+        }
+        if (showPickList) {
+            h.btnPickList.setOnClickListener { onPickList?.invoke(tx) }
+        }
+
+        // ── Danh sách sản phẩm ───────────────────────────────────
         h.llProducts.removeAllViews()
         val txItems = tx.items ?: emptyList()
 
@@ -128,7 +137,6 @@ class TransactionAdapter(
                 val name = item.product?.name ?: "SP #${item.product_id.take(6).uppercase()}"
                 val sku  = item.product?.sku?.let { " · $it" } ?: ""
 
-                // Nếu phiếu done và có actual → hiện cả 2
                 val qtyText = if (tx.status == "done" && (item.quantity_actual ?: 0) > 0) {
                     "×${item.quantity_actual} (yêu cầu ${item.quantity_requested})"
                 } else {
@@ -137,7 +145,9 @@ class TransactionAdapter(
 
                 val binLabel = when (tx.type) {
                     "import"   -> item.to_bin?.displayName()?.let { " → $it" } ?: ""
-                    "export"   -> item.from_bin?.displayName()?.let { " ← $it" } ?: ""
+                    "export"   -> item.from_bin?.displayName()?.let { " ← $it" }
+                        ?: item.suggested_bin?.displayName()?.let { " ← $it (đề xuất)" }
+                        ?: ""
                     "transfer" -> buildString {
                         item.from_bin?.displayName()?.let { append(" $it") }
                         item.to_bin?.displayName()?.let { append(" → $it") }
@@ -151,7 +161,6 @@ class TransactionAdapter(
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────
     private fun makeRow(ctx: android.content.Context, text: String, muted: Boolean = false) =
         TextView(ctx).apply {
             this.text = text
@@ -176,21 +185,18 @@ class TransactionAdapter(
         notifyDataSetChanged()
     }
 
-    // ── Build grouped entries ────────────────────────────────
     companion object {
         private fun buildEntries(items: List<TransactionSummary>): List<ListEntry> {
             if (items.isEmpty()) return emptyList()
 
-            // Sort: pending/processing lên trước trong cùng ngày, sau đó theo created_at desc
             val sorted = items.sortedWith(
                 compareByDescending<TransactionSummary> { dateKey(it.created_at) }
                     .thenBy { statusPriority(it.status) }
                     .thenByDescending { it.created_at }
             )
 
-            val result = mutableListOf<ListEntry>()
+            val result      = mutableListOf<ListEntry>()
             var lastDateKey = ""
-
             sorted.forEach { tx ->
                 val key = dateKey(tx.created_at)
                 if (key != lastDateKey) {
@@ -202,14 +208,13 @@ class TransactionAdapter(
             return result
         }
 
-        // pending=0, processing=1, rest=2 → pending nổi lên đầu mỗi ngày
         private fun statusPriority(status: String) = when (status) {
             "pending"    -> 0
             "processing" -> 1
             else         -> 2
         }
 
-        private fun dateKey(raw: String): String = raw.take(10) // "yyyy-MM-dd"
+        private fun dateKey(raw: String)   = raw.take(10)
 
         private fun dateLabel(raw: String): String {
             return try {

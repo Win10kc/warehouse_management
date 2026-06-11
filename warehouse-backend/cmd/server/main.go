@@ -193,7 +193,7 @@ func main() {
 		tx.GET("/:id", transactionH.GetByID)
 		tx.POST("", transactionH.Create)
 		tx.PUT("/:id/approve", middleware.RequireRole("admin", "manager"), transactionH.Approve)
-		tx.PUT("/:id/complete", middleware.RequireRole("admin", "manager"), transactionH.Complete)
+		tx.PUT("/:id/complete", transactionH.Complete, )
 		tx.PUT("/:id/reject", middleware.RequireRole("admin", "manager"), transactionH.Reject)
 		tx.PUT("/:id/suggest-bin", middleware.RequireRole("admin", "manager"), transactionH.SuggestBin)
 		tx.PUT("/:id/apply-bin",   middleware.RequireRole("admin", "manager"), transactionH.ApplyBin)

@@ -98,6 +98,31 @@
             android:textColor="@color/wh_text_muted"
             android:visibility="gone"/>
 
+        <!-- Nút Pick List — chỉ hiện khi type=export AND status=processing -->
+        <Button
+            android:id="@+id/btnPickList"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginTop="10dp"
+            android:text="📦 Lấy hàng"
+            android:textSize="13sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_main_button"
+            android:paddingHorizontal="16dp"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/btnComplete"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginTop="10dp"
+            android:text="✓ Hoàn tất"
+            android:textSize="13sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_main_button"
+            android:paddingHorizontal="16dp"
+            android:visibility="gone"/>
+
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>
