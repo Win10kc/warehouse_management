@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>ERD — Warehouse Management System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; }
+  h1 { text-align: center; color: #38bdf8; margin-bottom: 8px; font-size: 22px; }
+  .subtitle { text-align: center; color: #64748b; margin-bottom: 24px; font-size: 13px; }
+  .canvas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .table { background: #1e293b; border: 1px solid #334155; border-radius: 10px; overflow: hidden; }
+  .table-header { padding: 8px 12px; font-weight: 700; font-size: 12px; letter-spacing: 0.05em; }
+  .table-body { padding: 0; }
+  .field { display: flex; justify-content: space-between; padding: 5px 12px; font-size: 11px; border-top: 1px solid #1e293b; }
+  .field:nth-child(odd) { background: #0f172a22; }
+  .field-name { color: #e2e8f0; }
+  .field-name.pk { color: #fbbf24; font-weight: 700; }
+  .field-name.fk { color: #60a5fa; }
+  .field-type { color: #64748b; font-size: 10px; }
+  .badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 9px; margin-left: 4px; }
+  .pk-badge { background: #92400e; color: #fbbf24; }
+  .fk-badge { background: #1e3a5f; color: #60a5fa; }
+  .uk-badge { background: #14532d; color: #4ade80; }
+
+  .blue .table-header   { background: #1d4ed8; color: #fff; }
+  .green .table-header  { background: #15803d; color: #fff; }
+  .purple .table-header { background: #7c3aed; color: #fff; }
+  .orange .table-header { background: #c2410c; color: #fff; }
+  .teal .table-header   { background: #0f766e; color: #fff; }
+  .pink .table-header   { background: #be185d; color: #fff; }
+  .gray .table-header   { background: #475569; color: #fff; }
+  .red .table-header    { background: #b91c1c; color: #fff; }
+  .indigo .table-header { background: #4338ca; color: #fff; }
+  .yellow .table-header { background: #b45309; color: #fff; }
+
+  .relations { max-width: 1400px; margin: 24px auto 0; background: #1e293b; border-radius: 10px; padding: 20px; }
+  .relations h2 { color: #38bdf8; font-size: 14px; margin-bottom: 12px; }
+  .rel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .rel-item { background: #0f172a; border-radius: 6px; padding: 8px 12px; font-size: 11px; }
+  .rel-item .from { color: #fbbf24; font-weight: 600; }
+  .rel-item .arrow { color: #64748b; margin: 0 4px; }
+  .rel-item .to { color: #60a5fa; font-weight: 600; }
+  .rel-item .desc { color: #94a3b8; font-size: 10px; margin-top: 2px; }
+</style>
+</head>
+<body>
+<h1>📊 Entity Relationship Diagram (ERD)</h1>
+<p class="subtitle">Warehouse Management System — PostgreSQL Schema</p>
+
+<div class="canvas">
+
+  <!-- users -->
+  <div class="table blue">
+    <div class="table-header">👤 users</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name">username <span class="badge uk-badge">UK</span></span><span class="field-type">VARCHAR(100)</span></div>
+      <div class="field"><span class="field-name">password_hash</span><span class="field-type">VARCHAR(255)</span></div>
+      <div class="field"><span class="field-name">full_name</span><span class="field-type">VARCHAR(200)</span></div>
+      <div class="field"><span class="field-name">role</span><span class="field-type">admin|manager|warehouse</span></div>
+      <div class="field"><span class="field-name">is_active</span><span class="field-type">BOOLEAN</span></div>
+      <div class="field"><span class="field-name">created_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+      <div class="field"><span class="field-name">updated_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+    </div>
+  </div>
+
+  <!-- suppliers -->
+  <div class="table teal">
+    <div class="table-header">🏭 suppliers</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name">name</span><span class="field-type">VARCHAR(300)</span></div>
+      <div class="field"><span class="field-name">contact</span><span class="field-type">VARCHAR(300)</span></div>
+      <div class="field"><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+      <div class="field"><span class="field-name">is_active</span><span class="field-type">BOOLEAN</span></div>
+      <div class="field"><span class="field-name">created_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+      <div class="field"><span class="field-name">updated_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+    </div>
+  </div>
+
+  <!-- products -->
+  <div class="table green">
+    <div class="table-header">📦 products</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name">sku <span class="badge uk-badge">UK</span></span><span class="field-type">VARCHAR(100)</span></div>
+      <div class="field"><span class="field-name">name</span><span class="field-type">VARCHAR(300)</span></div>
+      <div class="field"><span class="field-name">unit</span><span class="field-type">VARCHAR(50)</span></div>
+      <div class="field"><span class="field-name">category</span><span class="field-type">VARCHAR(100)</span></div>
+      <div class="field"><span class="field-name">qr_code <span class="badge uk-badge">UK</span></span><span class="field-type">VARCHAR(200)</span></div>
+      <div class="field"><span class="field-name">rfid_uid <span class="badge uk-badge">UK</span></span><span class="field-type">VARCHAR(200)</span></div>
+      <div class="field"><span class="field-name">min_stock</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">max_stock</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name fk">supplier_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → suppliers</span></div>
+      <div class="field"><span class="field-name">is_active</span><span class="field-type">BOOLEAN</span></div>
+      <div class="field"><span class="field-name">created_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+    </div>
+  </div>
+
+  <!-- stock_summary -->
+  <div class="table orange">
+    <div class="table-header">📊 stock_summary</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name fk">product_id <span class="badge fk-badge">FK</span><span class="badge uk-badge">UK</span></span><span class="field-type">UUID → products</span></div>
+      <div class="field"><span class="field-name">total_quantity</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">reserved_quantity</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">updated_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+    </div>
+  </div>
+
+  <!-- warehouses -->
+  <div class="table purple">
+    <div class="table-header">🏢 warehouses</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name">name</span><span class="field-type">VARCHAR(200)</span></div>
+      <div class="field"><span class="field-name">address</span><span class="field-type">TEXT</span></div>
+      <div class="field"><span class="field-name">description</span><span class="field-type">TEXT</span></div>
+      <div class="field"><span class="field-name">is_active</span><span class="field-type">BOOLEAN</span></div>
+    </div>
+  </div>
+
+  <!-- zones -->
+  <div class="table purple">
+    <div class="table-header">🗺️ zones</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name fk">warehouse_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → warehouses</span></div>
+      <div class="field"><span class="field-name">code</span><span class="field-type">VARCHAR(50)</span></div>
+      <div class="field"><span class="field-name">name</span><span class="field-type">VARCHAR(200)</span></div>
+      <div class="field"><span class="field-name">description</span><span class="field-type">TEXT</span></div>
+    </div>
+  </div>
+
+  <!-- racks -->
+  <div class="table purple">
+    <div class="table-header">🗄️ racks</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name fk">zone_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → zones</span></div>
+      <div class="field"><span class="field-name">code</span><span class="field-type">VARCHAR(50)</span></div>
+      <div class="field"><span class="field-name">name</span><span class="field-type">VARCHAR(200)</span></div>
+      <div class="field"><span class="field-name">max_weight_kg</span><span class="field-type">INT</span></div>
+    </div>
+  </div>
+
+  <!-- bins -->
+  <div class="table purple">
+    <div class="table-header">📫 bins</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name fk">rack_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → racks</span></div>
+      <div class="field"><span class="field-name">code</span><span class="field-type">VARCHAR(50)</span></div>
+      <div class="field"><span class="field-name">qr_code <span class="badge uk-badge">UK</span></span><span class="field-type">VARCHAR(200)</span></div>
+      <div class="field"><span class="field-name">rfid_uid <span class="badge uk-badge">UK</span></span><span class="field-type">VARCHAR(200)</span></div>
+      <div class="field"><span class="field-name">capacity</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">is_active</span><span class="field-type">BOOLEAN</span></div>
+    </div>
+  </div>
+
+  <!-- stock_items -->
+  <div class="table red">
+    <div class="table-header">📍 stock_items</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name fk">product_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → products</span></div>
+      <div class="field"><span class="field-name fk">bin_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → bins</span></div>
+      <div class="field"><span class="field-name">quantity</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">status</span><span class="field-type">good|damaged...</span></div>
+      <div class="field"><span class="field-name">expire_date</span><span class="field-type">DATE</span></div>
+      <div class="field"><span class="field-name">updated_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+      <div class="field"><span class="field-name" style="color:#4ade80;font-size:10px">UNIQUE(product_id, bin_id)</span><span class="field-type"></span></div>
+    </div>
+  </div>
+
+  <!-- transactions -->
+  <div class="table indigo">
+    <div class="table-header">🔄 transactions</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name">code <span class="badge uk-badge">UK</span></span><span class="field-type">VARCHAR(100)</span></div>
+      <div class="field"><span class="field-name">type</span><span class="field-type">import|export|transfer|count</span></div>
+      <div class="field"><span class="field-name">status</span><span class="field-type">draft→pending→done</span></div>
+      <div class="field"><span class="field-name fk">created_by_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → users</span></div>
+      <div class="field"><span class="field-name fk">approved_by_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → users</span></div>
+      <div class="field"><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+      <div class="field"><span class="field-name">created_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+      <div class="field"><span class="field-name">approved_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+      <div class="field"><span class="field-name">completed_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+    </div>
+  </div>
+
+  <!-- transaction_items -->
+  <div class="table indigo">
+    <div class="table-header">📋 transaction_items</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name fk">transaction_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → transactions</span></div>
+      <div class="field"><span class="field-name fk">product_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → products</span></div>
+      <div class="field"><span class="field-name fk">from_bin_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → bins (nullable)</span></div>
+      <div class="field"><span class="field-name fk">to_bin_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → bins (nullable)</span></div>
+      <div class="field"><span class="field-name fk">suggested_bin_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → bins (nullable)</span></div>
+      <div class="field"><span class="field-name">quantity_requested</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">quantity_actual</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">scan_method</span><span class="field-type">qr|rfid|manual</span></div>
+    </div>
+  </div>
+
+  <!-- product_requests -->
+  <div class="table pink">
+    <div class="table-header">🚨 product_requests</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name">raw_code</span><span class="field-type">VARCHAR(500)</span></div>
+      <div class="field"><span class="field-name">suggested_name</span><span class="field-type">VARCHAR(300)</span></div>
+      <div class="field"><span class="field-name">supplier_name</span><span class="field-type">VARCHAR(300)</span></div>
+      <div class="field"><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+      <div class="field"><span class="field-name fk">reported_by_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → users</span></div>
+      <div class="field"><span class="field-name">status</span><span class="field-type">pending|resolved|rejected</span></div>
+      <div class="field"><span class="field-name">created_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+    </div>
+  </div>
+
+  <!-- audit_logs -->
+  <div class="table gray">
+    <div class="table-header">📜 audit_logs</div>
+    <div class="table-body">
+      <div class="field"><span class="field-name pk">id <span class="badge pk-badge">PK</span></span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name fk">user_id <span class="badge fk-badge">FK</span></span><span class="field-type">UUID → users</span></div>
+      <div class="field"><span class="field-name">action</span><span class="field-type">VARCHAR(100)</span></div>
+      <div class="field"><span class="field-name">entity_type</span><span class="field-type">VARCHAR(100)</span></div>
+      <div class="field"><span class="field-name">entity_id</span><span class="field-type">UUID</span></div>
+      <div class="field"><span class="field-name">old_value</span><span class="field-type">JSONB</span></div>
+      <div class="field"><span class="field-name">new_value</span><span class="field-type">JSONB</span></div>
+      <div class="field"><span class="field-name">ip_address</span><span class="field-type">VARCHAR(50)</span></div>
+      <div class="field"><span class="field-name">created_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Relationships -->
+<div class="relations">
+  <h2>🔗 Quan hệ giữa các bảng</h2>
+  <div class="rel-grid">
+    <div class="rel-item"><span class="from">suppliers</span><span class="arrow">─── 1:N ──►</span><span class="to">products</span><div class="desc">Một nhà cung cấp có nhiều sản phẩm (FK nullable)</div></div>
+    <div class="rel-item"><span class="from">products</span><span class="arrow">─── 1:1 ──►</span><span class="to">stock_summary</span><div class="desc">Mỗi sản phẩm có đúng 1 tổng tồn kho</div></div>
+    <div class="rel-item"><span class="from">products + bins</span><span class="arrow">─── N:N ──►</span><span class="to">stock_items</span><div class="desc">Sản phẩm lưu tại nhiều bin, UNIQUE(product_id, bin_id)</div></div>
+    <div class="rel-item"><span class="from">warehouses</span><span class="arrow">─── 1:N ──►</span><span class="to">zones</span><div class="desc">Kho có nhiều khu vực</div></div>
+    <div class="rel-item"><span class="from">zones</span><span class="arrow">─── 1:N ──►</span><span class="to">racks</span><div class="desc">Khu vực có nhiều kệ</div></div>
+    <div class="rel-item"><span class="from">racks</span><span class="arrow">─── 1:N ──►</span><span class="to">bins</span><div class="desc">Kệ có nhiều ô chứa hàng</div></div>
+    <div class="rel-item"><span class="from">users</span><span class="arrow">─── 1:N ──►</span><span class="to">transactions</span><div class="desc">User tạo nhiều phiếu (created_by_id)</div></div>
+    <div class="rel-item"><span class="from">users</span><span class="arrow">─── 1:N ──►</span><span class="to">transactions</span><div class="desc">Manager duyệt nhiều phiếu (approved_by_id)</div></div>
+    <div class="rel-item"><span class="from">transactions</span><span class="arrow">─── 1:N ──►</span><span class="to">transaction_items</span><div class="desc">Một phiếu có nhiều dòng sản phẩm (CASCADE DELETE)</div></div>
+    <div class="rel-item"><span class="from">transaction_items</span><span class="arrow">─── N:1 ──►</span><span class="to">bins</span><div class="desc">3 FK: from_bin, to_bin, suggested_bin (đều nullable)</div></div>
+    <div class="rel-item"><span class="from">users</span><span class="arrow">─── 1:N ──►</span><span class="to">product_requests</span><div class="desc">Nhân viên báo cáo nhiều sản phẩm chưa có mã</div></div>
+    <div class="rel-item"><span class="from">users</span><span class="arrow">─── 1:N ──►</span><span class="to">audit_logs</span><div class="desc">Mọi hành động được ghi lại</div></div>
+  </div>
+</div>
+
+</body>
+</html>
